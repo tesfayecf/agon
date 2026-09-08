@@ -1,0 +1,10 @@
+{
+  "name": "Acme Control Center",
+  "short_name": "Acme",
+  "description": "Opinionated React frontend starter for Go-backed products.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6efe5",
+  "theme_color": "#0f766e",
+  "icons": []
+}

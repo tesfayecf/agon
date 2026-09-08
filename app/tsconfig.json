@@ -1,0 +1,52 @@
+{
+  "compilerOptions": {
+    // Emit modern JS for evergreen browsers
+    "target": "ES2020",
+    // Include browser APIs and modern JS typings
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2020"
+    ],
+    // Let the bundler decide the final module format
+    "module": "ESNext",
+    // Match modern bundler import resolution (Vite/Webpack/Rollup)
+    "moduleResolution": "Bundler",
+    // Use React 17+ automatic JSX runtime
+    "jsx": "react-jsx",
+    // Enable all strict type-checking rules
+    "strict": true,
+    // Require `override` keyword for overridden class methods
+    "noImplicitOverride": true,
+    // Make indexed access potentially undefined
+    "noUncheckedIndexedAccess": true,
+    // Treat catch variables as `unknown`
+    "useUnknownInCatchVariables": true,
+    // Skip type-checking of node_modules for speed
+    "skipLibCheck": true,
+    // Enforce consistent file name casing across OSes
+    "forceConsistentCasingInFileNames": true,
+    // Ensure each file can be transpiled independently
+    "isolatedModules": true,
+    // Improve compatibility with CommonJS modules
+    "esModuleInterop": true,
+    // Allow default imports from non-ESM modules
+    "allowSyntheticDefaultImports": true,
+    // Allow importing JSON files
+    "resolveJsonModule": true,
+    // Disable JS emit (handled by bundler)
+    "noEmit": true
+  },
+  // Type-check only source files
+  "include": [
+    "src",
+    "vite.config.ts"
+  ],
+  // Exclude dependencies and build output
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".cache",
+    ".tmp"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "server:build",
+            "type": "shell",
+            "command": "go",
+            "problemMatcher": "$go",
+            "args": [
+                "build",
+                "-o",
+                "${workspaceFolder}/.build/bin/api",
+                "./cmd/api"
+            ]
+        },
+        {
+            "label": "server:run",
+            "type": "shell",
+            "command": "go",
+            "args": [
+                "run",
+                "./cmd/api"
+            ],
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "server:test",
+            "type": "shell",
+            "command": "go",
+            "args": [
+                "test",
+                "./..."
+            ],
+            "problemMatcher": "$go"
+        }
+    ]
+}

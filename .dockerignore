@@ -1,0 +1,9 @@
+.git
+.github
+app/node_modules
+app/dist
+app/.cache
+server/.tmp
+server/.build
+backups
+docker-compose.override.yml

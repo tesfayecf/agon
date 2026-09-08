@@ -1,0 +1,45 @@
+{
+  "name": "app-template-web",
+  "description": "Opinionated React frontend starter for Go-backed products.",
+  "license": "MIT",
+  "type": "commonjs",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "pnpm run typecheck && vite build",
+    "preview": "vite preview --host",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm run lint && pnpm run typecheck && vite build"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.90.14",
+    "@tanstack/react-query-devtools": "5.91.2",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-router-dom": "7.11.0"
+  },
+  "devDependencies": {
+    "@types/eslint-plugin-security": "3.0.0",
+    "@types/node": "22.13.5",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.7",
+    "@typescript-eslint/eslint-plugin": "8.32.1",
+    "@typescript-eslint/parser": "8.32.1",
+    "@vitejs/plugin-react": "4.6.0",
+    "eslint": "9.27.0",
+    "eslint-plugin-header": "3.1.1",
+    "eslint-plugin-jsdoc": "50.7.1",
+    "eslint-plugin-listeners": "1.5.1",
+    "eslint-plugin-promise": "7.2.1",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-security": "3.0.1",
+    "typescript": "5.3.3",
+    "vite": "6.2.0"
+  },
+  "engines": {
+    "node": ">=22.14.0",
+    "pnpm": "10.6.1"
+  },
+  "packageManager": "pnpm@10.6.1"
+}

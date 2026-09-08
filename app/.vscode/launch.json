@@ -1,0 +1,28 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "app:dev-server",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "pnpm dev",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "app:browser",
+            "type": "pwa-chrome",
+            "request": "launch",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/src"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "app:full-stack",
+            "configurations": [
+                "app:dev-server",
+                "app:browser"
+            ]
+        }
+    ]
+}

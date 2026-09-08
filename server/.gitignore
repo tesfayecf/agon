@@ -1,0 +1,11 @@
+.go
+.build
+.env
+.tmp
+
+go.work
+go.work.sum
+
+coverage.out
+
+__debug_*

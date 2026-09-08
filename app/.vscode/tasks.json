@@ -1,0 +1,52 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "app:dev",
+      "type": "shell",
+      "command": "pnpm",
+      "args": [
+        "dev"
+      ],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "app:build",
+      "type": "shell",
+      "command": "pnpm",
+      "args": [
+        "build"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "app:lint",
+      "type": "shell",
+      "command": "pnpm",
+      "args": [
+        "lint"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "app:typecheck",
+      "type": "shell",
+      "command": "pnpm",
+      "args": [
+        "typecheck"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "app:check",
+      "dependsOn": [
+        "app:lint",
+        "app:typecheck",
+        "app:build"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    }
+  ]
+}

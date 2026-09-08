@@ -1,0 +1,29 @@
+# Local-only Garage defaults for template experimentation.
+# Rotate tokens and addresses before using this outside a workstation.
+metadata_dir = "./.garage/meta"
+data_dir = "./.garage/data"
+db_engine = "sqlite"
+
+replication_factor = 1
+
+rpc_bind_addr = "[::]:5501"
+rpc_public_addr = "127.0.0.1:5501"
+rpc_secret = "2befb795b3db23bc549dca2125bc49fdea334b8d5eabf24d237094a868b48a9e"
+
+[s3_api]
+s3_region = "local"
+api_bind_addr = "[::]:5500"
+root_domain = ".s3.local.localhost"
+
+[s3_web]
+bind_addr = "[::]:5502"
+root_domain = ".web.local.localhost"
+index = "index.html"
+
+[k2v_api]
+api_bind_addr = "[::]:5504"
+
+[admin]
+api_bind_addr = "[::]:5503"
+admin_token = "qP/so0KE1M7Y+l+10xzSTkS+xs7MkXDqdmJg6DTZoJU="
+metrics_token = "yBigLeJ6yvs335lg1U0qjVqDdmO0qRbknQzRusFGFDA="

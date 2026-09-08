@@ -1,0 +1,112 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "frontend:dev",
+            "type": "shell",
+            "command": "pnpm",
+            "args": [
+                "--dir",
+                "app",
+                "dev"
+            ],
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "frontend:build",
+            "type": "shell",
+            "command": "pnpm",
+            "args": [
+                "--dir",
+                "app",
+                "build"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "frontend:lint",
+            "type": "shell",
+            "command": "pnpm",
+            "args": [
+                "--dir",
+                "app",
+                "lint"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "frontend:typecheck",
+            "type": "shell",
+            "command": "pnpm",
+            "args": [
+                "--dir",
+                "app",
+                "typecheck"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "server:run",
+            "type": "shell",
+            "command": "go",
+            "args": [
+                "run",
+                "./cmd/api"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/server"
+            },
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "server:build",
+            "type": "shell",
+            "command": "go",
+            "args": [
+                "build",
+                "-o",
+                ".build/bin/api",
+                "./cmd/api"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/server"
+            },
+            "problemMatcher": "$go"
+        },
+        {
+            "label": "server:test",
+            "type": "shell",
+            "command": "go",
+            "args": [
+                "test",
+                "./..."
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/server"
+            },
+            "problemMatcher": "$go"
+        },
+        {
+            "label": "workspace:dev",
+            "dependsOn": [
+                "server:run",
+                "frontend:dev"
+            ],
+            "dependsOrder": "parallel",
+            "problemMatcher": []
+        },
+        {
+            "label": "workspace:check",
+            "dependsOn": [
+                "frontend:lint",
+                "frontend:typecheck",
+                "frontend:build",
+                "server:test"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        }
+    ]
+}
