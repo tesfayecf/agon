@@ -30,6 +30,10 @@ export const AppShell = (): ReactElement => {
                     <strong>Overview</strong>
                     <small>Check the application foundation</small>
                 </NavLink>
+                <NavLink className="workspace-nav__item" to="/upload" end>
+                    <strong>Activity upload</strong>
+                    <small>Inspect FIT and TCX files</small>
+                </NavLink>
             </nav>
 
             <Outlet />

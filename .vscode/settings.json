@@ -7,7 +7,11 @@
             "changeProcessCWD": true
         }
     ],
-    "go.toolsManagement.autoUpdate": true,
+    // ----------------------------------------------------------------------
+    // GO
+    // ----------------------------------------------------------------------
+    "go.goroot": "${workspaceFolder}/third-party/go",
+    "go.gopath": "${workspaceFolder}/.go",
     "[go]": {
         "editor.defaultFormatter": "golang.go"
     }

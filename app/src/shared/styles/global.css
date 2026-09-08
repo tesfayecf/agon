@@ -323,6 +323,118 @@ code {
     background: linear-gradient(135deg, var(--accent), var(--accent-strong));
 }
 
+.upload-grid {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.upload-panel,
+.upload-list,
+.upload-detail {
+    grid-column: span 12;
+    padding: 1.4rem;
+    border-radius: 1.6rem;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+}
+
+.upload-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.file-input {
+    display: inline-block;
+    padding: 0.8rem 1rem;
+    border-radius: 999px;
+    border: 1px dashed rgba(15, 118, 110, 0.4);
+    background: rgba(15, 118, 110, 0.04);
+    cursor: pointer;
+}
+
+.file-input input {
+    display: none;
+}
+
+.file-list {
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.file-list__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    background: rgba(255, 252, 247, 0.82);
+    cursor: pointer;
+}
+
+.file-list__item.is-selected {
+    border-color: rgba(15, 118, 110, 0.4);
+    background: rgba(15, 118, 110, 0.05);
+}
+
+.file-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.file-meta strong {
+    font-size: 1rem;
+}
+
+.file-meta small {
+    color: var(--muted);
+}
+
+.error-banner {
+    margin-top: 1rem;
+    padding: 0.8rem 1rem;
+    border-radius: 1rem;
+    background: rgba(154, 52, 18, 0.1);
+    color: var(--danger);
+    border: 1px solid rgba(154, 52, 18, 0.2);
+}
+
+.metric-grid {
+    margin-top: 1rem;
+}
+
+.record-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    font-size: 0.92rem;
+}
+
+.record-table th,
+.record-table td {
+    padding: 0.6rem 0.5rem;
+    border-bottom: 1px solid rgba(16, 42, 51, 0.08);
+    text-align: left;
+    vertical-align: top;
+}
+
+.record-table th {
+    font-size: 0.74rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
 @keyframes rise-in {
     from {
         opacity: 0;

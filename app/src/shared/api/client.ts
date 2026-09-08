@@ -31,13 +31,24 @@ export async function apiRequest<TResponse, TBody = unknown>(
   options: ApiRequestOptions<TBody>,
 ): Promise<TResponse> {
   const headers = new Headers(options.headers);
+  const isFormData =
+    typeof FormData !== "undefined" && options.body instanceof FormData;
 
-  if (options.body !== undefined && !headers.has("Content-Type")) {
+  if (
+    options.body !== undefined &&
+    !headers.has("Content-Type") &&
+    !isFormData
+  ) {
     headers.set("Content-Type", "application/json");
   }
 
   const response = await fetch(buildApiUrl(options.path), {
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    body:
+      options.body === undefined
+        ? undefined
+        : isFormData
+          ? (options.body as FormData)
+          : JSON.stringify(options.body),
     headers,
     method: options.method ?? "GET",
     signal: options.signal,

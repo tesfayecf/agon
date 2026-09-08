@@ -1,9 +1,10 @@
 import { createBrowserRouter } from "react-router-dom";
 
+import { ActivityPage } from "../features/activity/ActivityPage";
+import { HealthPage } from "../features/health/HealthPage";
 import { AppRouteError } from "./AppRouteError";
 import { AppShell } from "./AppShell";
 import { NotFoundPage } from "./NotFoundPage";
-import { HealthPage } from "../features/health/HealthPage";
 
 export const router = createBrowserRouter([
     {
@@ -14,6 +15,10 @@ export const router = createBrowserRouter([
             {
                 index: true,
                 element: <HealthPage />,
+            },
+            {
+                path: "upload",
+                element: <ActivityPage />,
             },
             {
                 path: "*",
