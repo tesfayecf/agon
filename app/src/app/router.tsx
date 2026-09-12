@@ -1,7 +1,10 @@
 import { createBrowserRouter } from "react-router-dom";
 
 import { ActivityPage } from "../features/activity/ActivityPage";
-import { HealthPage } from "../features/health/HealthPage";
+import { TracksPage } from "../features/activity/TracksPage";
+import { TrackDetailPage } from "../features/activity/TrackDetailPage";
+import { DashboardPage } from "../features/dashboard/DashboardPage";
+import { SettingsPage } from "../features/settings/SettingsPage";
 import { AppRouteError } from "./AppRouteError";
 import { AppShell } from "./AppShell";
 import { NotFoundPage } from "./NotFoundPage";
@@ -14,7 +17,19 @@ export const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <HealthPage />,
+                element: <DashboardPage />,
+            },
+            {
+                path: "tracks",
+                element: <TracksPage />,
+            },
+            {
+                path: "tracks/:id",
+                element: <TrackDetailPage />,
+            },
+            {
+                path: "settings",
+                element: <SettingsPage />,
             },
             {
                 path: "upload",
