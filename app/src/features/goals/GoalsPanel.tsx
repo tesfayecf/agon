@@ -2,6 +2,7 @@ import { useState, type FormEvent, type ReactElement } from "react";
 
 import { createGoal, deleteGoal, updateGoal, type GoalType, type GoalWithProgress } from "./goals.service";
 import { EmptyState } from "../../shared/components/StateViews";
+import { ProgressRing } from "../../shared/components/ProgressRing";
 import { formatDistance } from "../../shared/utils/format";
 
 interface GoalsPanelProps {
@@ -10,8 +11,14 @@ interface GoalsPanelProps {
 }
 
 const GOAL_TYPE_LABELS: Record<GoalType, string> = {
-    weekly_distance: "Weekly distance",
-    monthly_distance: "Monthly distance",
+    weekly_distance: "Weekly goal",
+    monthly_distance: "Monthly goal",
+};
+
+const shortDate = (value: string): string => {
+    const date = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 };
 
 export const GoalsPanel = ({ goals, onChanged }: GoalsPanelProps): ReactElement => {
@@ -45,7 +52,7 @@ export const GoalsPanel = ({ goals, onChanged }: GoalsPanelProps): ReactElement 
             await updateGoal(goal.id, { targetMeters: goal.targetMeters, active: false });
             onChanged();
         } catch {
-            /* surfaced via list not refreshing; acceptable for this lightweight iteration */
+            /* surfaced via the list not refreshing; acceptable for this lightweight iteration */
         } finally {
             setBusyId(null);
         }
@@ -62,42 +69,66 @@ export const GoalsPanel = ({ goals, onChanged }: GoalsPanelProps): ReactElement 
     };
 
     return (
-        <div>
+        <div className="goals-panel">
             {goals.length === 0 && !isAdding && (
-                <EmptyState title="No active goals" message="Define a weekly or monthly distance goal to track progress." />
+                <EmptyState title="No active goals" message="Set a weekly or monthly distance target to track progress here." />
             )}
 
             {goals.length > 0 && (
                 <ul className="goal-list">
-                    {goals.map((goal) => (
-                        <li key={goal.id} className="goal-list__item">
-                            <div className="goal-list__header">
-                                <strong>{GOAL_TYPE_LABELS[goal.type]}</strong>
-                                <span className="goal-list__period">{goal.periodStart} → {goal.periodEnd}</span>
-                            </div>
-                            <div className="goal-progress">
-                                <div className="goal-progress__bar">
-                                    <div
-                                        className="goal-progress__fill"
-                                        style={{ width: `${Math.min(100, goal.percentComplete)}%` }}
-                                    />
+                    {goals.map((goal) => {
+                        const isComplete = goal.percentComplete >= 100;
+                        return (
+                            <li key={goal.id} className={`goal-card${isComplete ? " goal-card--complete" : ""}`}>
+                                <ProgressRing
+                                    percent={goal.percentComplete}
+                                    color={isComplete ? "var(--success)" : "var(--accent)"}
+                                    label={`${GOAL_TYPE_LABELS[goal.type]} ${Math.round(goal.percentComplete)}% complete`}
+                                />
+
+                                <div className="goal-card__body">
+                                    <div className="goal-card__title-row">
+                                        <strong className="goal-card__title">{GOAL_TYPE_LABELS[goal.type]}</strong>
+                                        <div className="goal-card__actions">
+                                            <button
+                                                type="button"
+                                                className="icon-btn"
+                                                title="Deactivate goal"
+                                                aria-label={`Deactivate ${GOAL_TYPE_LABELS[goal.type]} goal`}
+                                                disabled={busyId === goal.id}
+                                                onClick={() => handleDeactivate(goal)}
+                                            >
+                                                ⏻
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="icon-btn icon-btn--danger"
+                                                title="Remove goal"
+                                                aria-label={`Remove ${GOAL_TYPE_LABELS[goal.type]} goal`}
+                                                disabled={busyId === goal.id}
+                                                onClick={() => handleDelete(goal)}
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <p className="goal-card__figure">
+                                        <strong>{formatDistance(goal.achievedMeters)}</strong>
+                                        <span> / {formatDistance(goal.targetMeters)}</span>
+                                    </p>
+
+                                    <p className="goal-card__meta">
+                                        {isComplete ? "Target reached" : `${formatDistance(goal.remainingMeters)} to go`}
+                                        <span className="goal-card__dot" aria-hidden="true">
+                                            ·
+                                        </span>
+                                        {shortDate(goal.periodStart)} – {shortDate(goal.periodEnd)}
+                                    </p>
                                 </div>
-                                <span className="goal-progress__label">{goal.percentComplete.toFixed(0)}%</span>
-                            </div>
-                            <div className="goal-list__stats">
-                                <span>{formatDistance(goal.achievedMeters)} of {formatDistance(goal.targetMeters)}</span>
-                                <span>{formatDistance(goal.remainingMeters)} remaining</span>
-                            </div>
-                            <div className="goal-list__actions">
-                                <button type="button" className="btn btn-ghost btn-sm" disabled={busyId === goal.id} onClick={() => handleDeactivate(goal)}>
-                                    Deactivate
-                                </button>
-                                <button type="button" className="btn btn-ghost btn-sm" disabled={busyId === goal.id} onClick={() => handleDelete(goal)}>
-                                    Remove
-                                </button>
-                            </div>
-                        </li>
-                    ))}
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
 
@@ -116,12 +147,16 @@ export const GoalsPanel = ({ goals, onChanged }: GoalsPanelProps): ReactElement 
                     </div>
                     {error !== null && <p className="error-banner">{error}</p>}
                     <div className="goal-form__actions">
-                        <button type="submit" className="btn btn-primary btn-sm">Save goal</button>
-                        <button type="button" className="btn btn-sm" onClick={() => setIsAdding(false)}>Cancel</button>
+                        <button type="submit" className="btn btn-primary btn-sm">
+                            Save goal
+                        </button>
+                        <button type="button" className="btn btn-sm" onClick={() => setIsAdding(false)}>
+                            Cancel
+                        </button>
                     </div>
                 </form>
             ) : (
-                <button type="button" className="btn btn-sm" style={{ marginTop: "0.75rem" }} onClick={() => setIsAdding(true)}>
+                <button type="button" className="btn btn-sm goals-panel__add" onClick={() => setIsAdding(true)}>
                     + Add goal
                 </button>
             )}

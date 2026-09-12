@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from "react";
+import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Link } from "react-router-dom";
 
 import { fetchDashboardStats, type DashboardStats } from "../activity/activity.service";
@@ -6,7 +6,7 @@ import { fetchCalendarWeek } from "../schedule/schedule.service";
 import { CalendarMiniPreview } from "../calendar/CalendarMiniPreview";
 import { PageHeader } from "../../shared/components/PageHeader";
 import { Card } from "../../shared/components/Card";
-import { MetricCard } from "../../shared/components/MetricCard";
+import { MetricCard, type MetricTrend } from "../../shared/components/MetricCard";
 import { LoadingState, EmptyState, ErrorState } from "../../shared/components/StateViews";
 import { formatDistance, formatDuration, formatPace, formatTime } from "../../shared/utils/format";
 import { GoalsPanel } from "../goals/GoalsPanel";
@@ -14,6 +14,9 @@ import { BarTrendChart } from "./charts/BarTrendChart";
 import { LineTrendChart } from "./charts/LineTrendChart";
 import { ScatterTrendChart } from "./charts/ScatterTrendChart";
 import { toDateKey } from "../calendar/calendar.utils";
+
+type VolumePeriod = "weekly" | "monthly";
+type EffortMetric = "pace" | "heartRate";
 
 const weekLabel = (weekStart: string): string => {
     const d = new Date(`${weekStart}T00:00:00`);
@@ -27,6 +30,20 @@ const monthLabel = (month: string): string => {
     return new Date(year, m - 1, 1).toLocaleDateString(undefined, { month: "short" });
 };
 
+const round1 = (value: number): number => Math.round(value * 10) / 10;
+
+/** Builds a delta pill comparing the current period against the one before it. */
+const deltaTrend = (current: number, previous: number, lowerIsBetter = false): MetricTrend | undefined => {
+    if (previous <= 0) return undefined;
+    const change = ((current - previous) / previous) * 100;
+    if (Math.abs(change) < 1) return { direction: "flat", label: "level vs. previous", lowerIsBetter };
+    return {
+        direction: change > 0 ? "up" : "down",
+        label: `${Math.abs(change).toFixed(0)}% vs. previous`,
+        lowerIsBetter,
+    };
+};
+
 interface WeeklyPlanSummary {
     plannedDistanceMeters: number;
     completedDistanceMeters: number;
@@ -37,6 +54,8 @@ export const DashboardPage = (): ReactElement => {
     const [weekPlan, setWeekPlan] = useState<WeeklyPlanSummary | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [volumePeriod, setVolumePeriod] = useState<VolumePeriod>("weekly");
+    const [effortMetric, setEffortMetric] = useState<EffortMetric>("pace");
 
     const load = () => {
         setIsLoading(true);
@@ -68,16 +87,39 @@ export const DashboardPage = (): ReactElement => {
 
     const activities = stats?.recentActivities ?? [];
 
+    const summary = useMemo(() => {
+        if (stats === null) return null;
+        const weekly = stats.weeklyTrend;
+        const monthly = stats.monthlyTrend;
+        const previousWeek = weekly.length >= 2 ? (weekly[weekly.length - 2]?.distanceMeters ?? 0) : 0;
+        const previousMonth = monthly.length >= 2 ? (monthly[monthly.length - 2]?.distanceMeters ?? 0) : 0;
+        const activeWeeks = weekly.filter((w) => w.distanceMeters > 0).length;
+        const bestWeek = weekly.reduce((best, w) => (w.distanceMeters > best ? w.distanceMeters : best), 0);
+        const avgSession = stats.trainingCount > 0 ? stats.totalDuration / stats.trainingCount : 0;
+        const latestEffort = stats.paceHeartRatePoints[stats.paceHeartRatePoints.length - 1];
+        return { previousWeek, previousMonth, activeWeeks, bestWeek, avgSession, latestEffort, weeklyWindow: weekly.length };
+    }, [stats]);
+
+    const planProgress = useMemo(() => {
+        if (weekPlan === null || weekPlan.plannedDistanceMeters <= 0) return null;
+        return Math.min(100, (weekPlan.completedDistanceMeters / weekPlan.plannedDistanceMeters) * 100);
+    }, [weekPlan]);
+
     return (
         <section aria-live="polite">
             <PageHeader
                 eyebrow="Overview"
                 title="Training Dashboard"
-                subtitle="A snapshot of your current training state, trends, and goals."
+                subtitle="Your current load, long-term trends, and progress against the plan."
                 actions={
-                    <Link to="/tracks" className="btn btn-primary">
-                        View all trainings
-                    </Link>
+                    <>
+                        <Link to="/calendar" className="btn">
+                            Plan the week
+                        </Link>
+                        <Link to="/tracks" className="btn btn-primary">
+                            View all trainings
+                        </Link>
+                    </>
                 }
             />
 
@@ -93,48 +135,139 @@ export const DashboardPage = (): ReactElement => {
                 </Card>
             )}
 
-            {!isLoading && error === null && stats !== null && (
+            {!isLoading && error === null && stats !== null && summary !== null && (
                 <>
-                    <div className="card-grid" style={{ gridTemplateColumns: "minmax(0, 2fr) minmax(240px, 1fr)" }}>
-                        <div>
-                            <Card title="Current state">
-                                <div className="metric-grid">
-                                    <MetricCard label="This week" value={formatDistance(stats.currentWeekDistance)} isAvailable={stats.currentWeekDistance > 0} />
-                                    <MetricCard label="This month" value={formatDistance(stats.currentMonthDistance)} isAvailable={stats.currentMonthDistance > 0} />
-                                    <MetricCard label="Completed sessions" value={String(stats.trainingCount)} isAvailable={stats.trainingCount > 0} />
-                                    <MetricCard label="Total duration" value={formatDuration(stats.totalDuration)} isAvailable={stats.totalDuration > 0} />
-                                </div>
+                    <div className="kpi-grid">
+                        <MetricCard
+                            label="This week"
+                            value={formatDistance(stats.currentWeekDistance)}
+                            icon="◴"
+                            hint={`${stats.currentWeekSessions} session${stats.currentWeekSessions === 1 ? "" : "s"}`}
+                            trend={deltaTrend(stats.currentWeekDistance, summary.previousWeek)}
+                            isAvailable={stats.currentWeekDistance > 0}
+                        />
+                        <MetricCard
+                            label="This month"
+                            value={formatDistance(stats.currentMonthDistance)}
+                            icon="▤"
+                            hint={`${stats.currentMonthSessions} session${stats.currentMonthSessions === 1 ? "" : "s"}`}
+                            trend={deltaTrend(stats.currentMonthDistance, summary.previousMonth)}
+                            isAvailable={stats.currentMonthDistance > 0}
+                        />
+                        <MetricCard
+                            label="Consistency"
+                            value={`${summary.activeWeeks}/${summary.weeklyWindow}`}
+                            icon="◈"
+                            hint="active weeks in window"
+                            isAvailable={summary.activeWeeks > 0}
+                        />
+                        <MetricCard
+                            label="Best week"
+                            value={formatDistance(summary.bestWeek)}
+                            icon="▲"
+                            hint="highest weekly volume"
+                            isAvailable={summary.bestWeek > 0}
+                        />
+                        <MetricCard
+                            label="Sessions"
+                            value={String(stats.trainingCount)}
+                            icon="≣"
+                            hint={`${formatDuration(summary.avgSession)} avg. session`}
+                            isAvailable={stats.trainingCount > 0}
+                        />
+                        <MetricCard
+                            label="Total time"
+                            value={formatDuration(stats.totalDuration)}
+                            icon="◷"
+                            hint={`${formatDistance(stats.totalDistance)} all-time`}
+                            isAvailable={stats.totalDuration > 0}
+                        />
+                    </div>
+
+                    <div className="dashboard-grid">
+                        <div className="dashboard-grid__main">
+                            <Card
+                                title="Training volume"
+                                eyebrow="Completed training only"
+                                accent={volumePeriod === "weekly" ? "var(--chart-1)" : "var(--chart-4)"}
+                                actions={
+                                    <div className="chart-tabs" role="tablist" aria-label="Training volume period">
+                                        <button
+                                            type="button"
+                                            role="tab"
+                                            aria-selected={volumePeriod === "weekly"}
+                                            className={`chart-tab${volumePeriod === "weekly" ? " is-active" : ""}`}
+                                            onClick={() => setVolumePeriod("weekly")}
+                                        >
+                                            Weekly
+                                        </button>
+                                        <button
+                                            type="button"
+                                            role="tab"
+                                            aria-selected={volumePeriod === "monthly"}
+                                            className={`chart-tab${volumePeriod === "monthly" ? " is-active" : ""}`}
+                                            onClick={() => setVolumePeriod("monthly")}
+                                        >
+                                            Monthly
+                                        </button>
+                                    </div>
+                                }
+                            >
+                                {volumePeriod === "weekly" ? (
+                                    <BarTrendChart
+                                        points={stats.weeklyTrend.map((p) => ({
+                                            label: weekLabel(p.weekStart),
+                                            value: round1(p.distanceMeters / 1000),
+                                            isCurrent: p.isCurrent,
+                                            tooltip: `Week of ${p.weekStart}: ${formatDistance(p.distanceMeters)} (${p.sessionCount} sessions)`,
+                                        }))}
+                                        valueFormatter={(v) => `${v} km`}
+                                        emptyMessage="Not enough training data yet to show a weekly trend."
+                                        color="var(--chart-1)"
+                                    />
+                                ) : (
+                                    <BarTrendChart
+                                        points={stats.monthlyTrend.map((p) => ({
+                                            label: monthLabel(p.month),
+                                            value: round1(p.distanceMeters / 1000),
+                                            isCurrent: p.isCurrent,
+                                            tooltip: `${p.month}: ${formatDistance(p.distanceMeters)} (${p.sessionCount} sessions)`,
+                                        }))}
+                                        valueFormatter={(v) => `${v} km`}
+                                        emptyMessage="Not enough training data yet to show a monthly trend."
+                                        color="var(--chart-4)"
+                                    />
+                                )}
                             </Card>
 
-                            <Card title="Weekly mileage trend" eyebrow="Completed training only">
-                                <BarTrendChart
-                                    points={stats.weeklyTrend.map((p) => ({
-                                        label: weekLabel(p.weekStart),
-                                        value: round1(p.distanceMeters / 1000),
-                                        isCurrent: p.isCurrent,
-                                        tooltip: `Week of ${p.weekStart}: ${formatDistance(p.distanceMeters)} (${p.sessionCount} sessions)`,
-                                    }))}
-                                    valueFormatter={(v) => `${v} km`}
-                                    emptyMessage="Not enough training data yet to show a weekly trend."
-                                />
-                            </Card>
-
-                            <Card title="Monthly mileage trend" eyebrow="Completed training only">
-                                <BarTrendChart
-                                    points={stats.monthlyTrend.map((p) => ({
-                                        label: monthLabel(p.month),
-                                        value: round1(p.distanceMeters / 1000),
-                                        isCurrent: p.isCurrent,
-                                        tooltip: `${p.month}: ${formatDistance(p.distanceMeters)} (${p.sessionCount} sessions)`,
-                                    }))}
-                                    valueFormatter={(v) => `${v} km`}
-                                    emptyMessage="Not enough training data yet to show a monthly trend."
-                                    color="var(--chart-4)"
-                                />
-                            </Card>
-
-                            <div className="card-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
-                                <Card title="Pace trend" eyebrow="Weekly average">
+                            <Card
+                                title="Effort trend"
+                                eyebrow="Weekly average"
+                                accent={effortMetric === "pace" ? "var(--chart-2)" : "var(--chart-3)"}
+                                actions={
+                                    <div className="chart-tabs" role="tablist" aria-label="Effort metric">
+                                        <button
+                                            type="button"
+                                            role="tab"
+                                            aria-selected={effortMetric === "pace"}
+                                            className={`chart-tab${effortMetric === "pace" ? " is-active" : ""}`}
+                                            onClick={() => setEffortMetric("pace")}
+                                        >
+                                            Pace
+                                        </button>
+                                        <button
+                                            type="button"
+                                            role="tab"
+                                            aria-selected={effortMetric === "heartRate"}
+                                            className={`chart-tab${effortMetric === "heartRate" ? " is-active" : ""}`}
+                                            onClick={() => setEffortMetric("heartRate")}
+                                        >
+                                            Heart rate
+                                        </button>
+                                    </div>
+                                }
+                            >
+                                {effortMetric === "pace" ? (
                                     <LineTrendChart
                                         points={stats.paceTrend.map((p) => ({
                                             label: weekLabel(p.weekStart),
@@ -145,9 +278,7 @@ export const DashboardPage = (): ReactElement => {
                                         emptyMessage="No reliable pace data available yet."
                                         color="var(--chart-2)"
                                     />
-                                </Card>
-
-                                <Card title="Heart-rate trend" eyebrow="Weekly average">
+                                ) : (
                                     <LineTrendChart
                                         points={stats.heartRateTrend.map((p) => ({
                                             label: weekLabel(p.weekStart),
@@ -158,13 +289,25 @@ export const DashboardPage = (): ReactElement => {
                                         emptyMessage="No heart-rate data recorded yet."
                                         color="var(--chart-3)"
                                     />
-                                </Card>
-                            </div>
+                                )}
+                            </Card>
 
-                            <Card title="Fitness progress" eyebrow="Pace vs. heart rate, per training">
-                                <p className="settings-field__description">
-                                    Each point is one training. A lower heart rate at a similar (or faster) pace over
-                                    time suggests improving aerobic fitness.
+                            <Card
+                                title="Fitness progress"
+                                eyebrow="Pace vs. heart rate"
+                                accent="var(--chart-5)"
+                                actions={
+                                    summary.latestEffort !== undefined ? (
+                                        <div className="chip-row">
+                                            <span className="chip">Latest {formatPace(summary.latestEffort.paceSecondsPerKm)}</span>
+                                            <span className="chip">{summary.latestEffort.avgHeartRate.toFixed(0)} bpm</span>
+                                        </div>
+                                    ) : undefined
+                                }
+                            >
+                                <p className="card__note">
+                                    Each point is one training. A lower heart rate at a similar or faster pace over time suggests
+                                    improving aerobic fitness.
                                 </p>
                                 <ScatterTrendChart
                                     points={stats.paceHeartRatePoints.map((p) => ({
@@ -180,29 +323,6 @@ export const DashboardPage = (): ReactElement => {
                                 />
                             </Card>
 
-                            <Card title="Personal bests">
-                                {stats.personalBests.length === 0 && (
-                                    <EmptyState title="No personal bests yet" message="Complete a training that matches a common race distance to see it here." />
-                                )}
-                                {stats.personalBests.length > 0 && (
-                                    <ul className="record-list">
-                                        {stats.personalBests.map((pb) => (
-                                            <li key={pb.label}>
-                                                <Link to={`/tracks/${pb.activityId}`} className="record-list__item">
-                                                    <div className="record-list__meta">
-                                                        <strong>{pb.label}</strong>
-                                                        <small>{pb.activityName || "—"} · {pb.date ? new Date(pb.date).toLocaleDateString() : "—"}</small>
-                                                    </div>
-                                                    <div className="record-list__stats">
-                                                        <strong>{formatTime(pb.bestSeconds)}</strong>
-                                                    </div>
-                                                </Link>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </Card>
-
                             <Card title="Recent trainings" link={{ to: "/tracks", label: "See all" }}>
                                 {activities.length === 0 && (
                                     <EmptyState
@@ -211,19 +331,28 @@ export const DashboardPage = (): ReactElement => {
                                     />
                                 )}
                                 {activities.length > 0 && (
-                                    <ul className="record-list">
+                                    <ul className="activity-list">
                                         {activities.slice(0, 6).map((act) => (
                                             <li key={act.id}>
-                                                <Link to={`/tracks/${act.id}`} className="record-list__item">
-                                                    <div className="record-list__meta">
-                                                        <strong>{act.name || act.filename}</strong>
-                                                        <small>{act.activityDate ? new Date(act.activityDate).toLocaleDateString() : "Date unavailable"}</small>
-                                                    </div>
-                                                    <div className="record-list__stats">
-                                                        {act.distanceMeters !== undefined && act.distanceMeters > 0 && (
-                                                            <strong>{formatDistance(act.distanceMeters)}</strong>
-                                                        )}
-                                                    </div>
+                                                <Link to={`/tracks/${act.id}`} className="activity-row">
+                                                    <span className="activity-row__marker" aria-hidden="true" />
+                                                    <span className="activity-row__meta">
+                                                        <strong>{act.name ?? act.filename}</strong>
+                                                        <small>
+                                                            {act.activityDate !== undefined && act.activityDate !== ""
+                                                                ? new Date(act.activityDate).toLocaleDateString(undefined, {
+                                                                      day: "numeric",
+                                                                      month: "short",
+                                                                      year: "numeric",
+                                                                  })
+                                                                : "Date unavailable"}
+                                                            {act.tags !== undefined && act.tags !== "" ? ` · ${act.tags}` : ""}
+                                                        </small>
+                                                    </span>
+                                                    <span className="activity-row__stats">
+                                                        <strong>{formatDistance(act.distanceMeters)}</strong>
+                                                        <small>{formatDuration(act.durationSeconds)}</small>
+                                                    </span>
                                                 </Link>
                                             </li>
                                         ))}
@@ -232,29 +361,79 @@ export const DashboardPage = (): ReactElement => {
                             </Card>
                         </div>
 
-                        <div>
-                            <Card title="Goals" link={{ to: "/calendar", label: "Plan the week" }}>
+                        <aside className="dashboard-grid__rail">
+                            <Card title="Goals" accent="var(--accent)" link={{ to: "/schedule", label: "Schedule" }}>
                                 <GoalsPanel goals={stats.goals ?? []} onChanged={load} />
                             </Card>
 
-                            {weekPlan !== null && (weekPlan.plannedDistanceMeters > 0 || weekPlan.completedDistanceMeters > 0) && (
-                                <Card title="This week: planned vs. completed">
-                                    <div className="metric-grid">
-                                        <MetricCard label="Planned" value={formatDistance(weekPlan.plannedDistanceMeters)} isAvailable={weekPlan.plannedDistanceMeters > 0} />
-                                        <MetricCard label="Completed" value={formatDistance(weekPlan.completedDistanceMeters)} isAvailable={weekPlan.completedDistanceMeters > 0} />
+                            <Card title="This week" eyebrow="Planned vs. completed" accent="var(--chart-2)">
+                                {weekPlan === null || (weekPlan.plannedDistanceMeters === 0 && weekPlan.completedDistanceMeters === 0) ? (
+                                    <EmptyState
+                                        title="Nothing planned yet"
+                                        message="Add planned sessions in the calendar to compare plan against reality."
+                                    />
+                                ) : (
+                                    <div className="plan-compare">
+                                        <div className="plan-compare__row">
+                                            <span className="plan-compare__label">Planned</span>
+                                            <span className="plan-compare__value">{formatDistance(weekPlan.plannedDistanceMeters)}</span>
+                                        </div>
+                                        <div className="plan-compare__track">
+                                            <div className="plan-compare__fill plan-compare__fill--planned" style={{ width: "100%" }} />
+                                        </div>
+                                        <div className="plan-compare__row">
+                                            <span className="plan-compare__label">Completed</span>
+                                            <span className="plan-compare__value">{formatDistance(weekPlan.completedDistanceMeters)}</span>
+                                        </div>
+                                        <div className="plan-compare__track">
+                                            <div
+                                                className="plan-compare__fill plan-compare__fill--completed"
+                                                style={{ width: `${planProgress ?? 0}%` }}
+                                            />
+                                        </div>
+                                        {planProgress !== null && (
+                                            <p className="plan-compare__note">{planProgress.toFixed(0)}% of the planned week completed</p>
+                                        )}
                                     </div>
-                                </Card>
-                            )}
+                                )}
+                            </Card>
 
-                            <Card title="This month" link={{ to: "/calendar", label: "Open calendar" }}>
+                            <Card title="Personal bests" accent="var(--chart-4)">
+                                {stats.personalBests.length === 0 && (
+                                    <EmptyState
+                                        title="No personal bests yet"
+                                        message="Complete a training matching a common race distance to see it here."
+                                    />
+                                )}
+                                {stats.personalBests.length > 0 && (
+                                    <ul className="pb-list">
+                                        {stats.personalBests.map((pb, idx) => (
+                                            <li key={pb.label}>
+                                                <Link to={`/tracks/${pb.activityId}`} className="pb-row">
+                                                    <span className={`pb-row__rank pb-row__rank--${Math.min(idx + 1, 4)}`} aria-hidden="true">
+                                                        {idx + 1}
+                                                    </span>
+                                                    <span className="pb-row__meta">
+                                                        <strong>{pb.label}</strong>
+                                                        <small>
+                                                            {pb.date !== "" ? new Date(pb.date).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                                                        </small>
+                                                    </span>
+                                                    <span className="pb-row__time">{formatTime(pb.bestSeconds)}</span>
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </Card>
+
+                            <Card title="This month" link={{ to: "/calendar", label: "Calendar" }}>
                                 <CalendarMiniPreview files={activities} />
                             </Card>
-                        </div>
+                        </aside>
                     </div>
                 </>
             )}
         </section>
     );
 };
-
-const round1 = (value: number): number => Math.round(value * 10) / 10;

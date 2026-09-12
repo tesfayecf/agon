@@ -131,31 +131,45 @@
 
 .page-header {
     display: flex;
-    align-items: flex-start;
+    align-items: flex-end;
     justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--border);
     flex-wrap: wrap;
 }
 
 .page-header__eyebrow {
-    margin: 0 0 0.3rem;
-    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0 0 0.35rem;
+    font-size: 0.7rem;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--accent);
+}
+
+.page-header__eyebrow::before {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 999px;
+    background: currentColor;
 }
 
 .page-header__title {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
+    letter-spacing: -0.02em;
 }
 
 .page-header__subtitle {
-    margin: 0.35rem 0 0;
+    margin: 0.4rem 0 0;
     color: var(--muted);
     font-size: 0.92rem;
-    max-width: 60ch;
+    max-width: 62ch;
 }
 
 .page-header__actions {
@@ -247,40 +261,91 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 1.25rem 1.4rem;
+    padding: var(--space-5) var(--space-5);
     box-shadow: var(--shadow-sm);
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.card:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-md);
 }
 
 .card + .card {
-    margin-top: 1.25rem;
+    margin-top: var(--space-4);
 }
 
 .card-grid {
     display: grid;
-    gap: 1.25rem;
+    gap: var(--space-4);
 }
 
 .card__header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.card__heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+.card__accent {
+    width: 3px;
+    align-self: stretch;
+    min-height: 1.9rem;
+    border-radius: 999px;
+    flex-shrink: 0;
+}
+
+.card__eyebrow {
+    margin: 0 0 0.2rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
 }
 
 .card__title {
-    font-size: 1.05rem;
+    font-size: 1.02rem;
+    letter-spacing: -0.01em;
+}
+
+.card__header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
 }
 
 .card__link {
-    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.82rem;
     font-weight: 600;
     color: var(--accent);
     text-decoration: none;
+    white-space: nowrap;
 }
 
 .card__link:hover {
-    text-decoration: underline;
+    gap: 0.45rem;
+}
+
+.card__note {
+    margin: 0 0 var(--space-4);
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: 68ch;
 }
 
 /* ---------------------------------------------------------------- */
@@ -293,34 +358,118 @@
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
+/* Top-level KPI strip on the dashboard. */
+.kpi-grid {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    margin-bottom: var(--space-4);
+}
+
 .metric-card {
-    padding: 0.9rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: var(--space-4);
     border-radius: var(--radius-md);
-    background: var(--surface-muted);
+    background: var(--surface);
     border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    min-width: 0;
+    transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.metric-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+}
+
+.metric-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
 }
 
 .metric-card__label {
-    display: block;
-    margin: 0 0 0.3rem;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 700;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--muted);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.metric-card__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.55rem;
+    height: 1.55rem;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.8rem;
+    flex-shrink: 0;
 }
 
 .metric-card__value {
     margin: 0;
-    font-size: 1.3rem;
+    font-size: 1.5rem;
     font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
     color: var(--ink);
+    font-variant-numeric: tabular-nums;
 }
 
 .metric-card__value--muted {
     color: var(--muted);
     font-weight: 600;
-    font-size: 1.05rem;
+    font-size: 1.2rem;
+}
+
+.metric-card__footer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    min-height: 1.25rem;
+}
+
+.metric-card__hint {
+    font-size: 0.74rem;
+    color: var(--muted);
+    min-width: 0;
+}
+
+.metric-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.12rem 0.4rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+.metric-trend--positive {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.metric-trend--negative {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.metric-trend--flat {
+    background: var(--surface-muted);
+    color: var(--muted);
 }
 
 /* ---------------------------------------------------------------- */
@@ -421,6 +570,9 @@
     font-size: 0.88rem;
     color: var(--ink-secondary);
     flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    font-variant-numeric: tabular-nums;
 }
 
 /* ---------------------------------------------------------------- */
@@ -728,21 +880,82 @@
 /* ---------------------------------------------------------------- */
 
 .trend-chart {
-    background: var(--surface-muted);
-    border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    padding: 0.75rem;
-    overflow-x: auto;
+    padding: var(--space-2) 0 0;
+}
+
+.trend-chart__svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    overflow: visible;
 }
 
 .chart-empty {
-    padding: 2rem 1rem;
+    padding: 2.25rem 1rem;
     text-align: center;
     color: var(--muted);
-    font-size: 0.88rem;
-    background: var(--surface-muted);
+    font-size: 0.86rem;
+    background: linear-gradient(180deg, var(--surface-muted), transparent);
     border: 1px dashed var(--border-strong);
     border-radius: var(--radius-md);
+}
+
+.chart-empty p {
+    margin: 0;
+}
+
+/* Segmented control used to switch series inside a chart card. */
+.chart-tabs {
+    display: inline-flex;
+    padding: 0.15rem;
+    gap: 0.15rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+}
+
+.chart-tab {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 650;
+    padding: 0.28rem 0.65rem;
+    border-radius: calc(var(--radius-sm) - 0.15rem);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 140ms ease, color 140ms ease;
+}
+
+.chart-tab:hover {
+    color: var(--ink);
+}
+
+.chart-tab.is-active {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow-sm);
+}
+
+.chip-row {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-muted);
+    color: var(--ink-secondary);
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 /* ---------------------------------------------------------------- */
@@ -754,85 +967,391 @@
     margin: 0;
     padding: 0;
     display: grid;
-    gap: 0.9rem;
+    gap: var(--space-3);
 }
 
-.goal-list__item {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 0.8rem 0.9rem;
-    background: var(--surface-muted);
-}
-
-.goal-list__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.goal-list__period {
-    font-size: 0.72rem;
-    color: var(--muted);
-}
-
-.goal-progress {
+.goal-card {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    margin-bottom: 0.4rem;
+    gap: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    background: var(--surface-muted);
+    min-width: 0;
 }
 
-.goal-progress__bar {
+.goal-card--complete {
+    border-color: color-mix(in srgb, var(--success) 35%, var(--border));
+    background: var(--success-soft);
+}
+
+.goal-card__body {
     flex: 1;
-    height: 0.55rem;
-    border-radius: 999px;
-    background: var(--border);
-    overflow: hidden;
+    min-width: 0;
 }
 
-.goal-progress__fill {
-    height: 100%;
-    background: var(--accent);
-    border-radius: 999px;
-    transition: width 200ms ease;
-}
-
-.goal-progress__label {
-    font-size: 0.78rem;
-    font-weight: 700;
-    color: var(--ink-secondary);
-    min-width: 3ch;
-    text-align: right;
-}
-
-.goal-list__stats {
+.goal-card__title-row {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    font-size: 0.78rem;
-    color: var(--muted);
-    margin-bottom: 0.5rem;
+    gap: var(--space-2);
+    min-width: 0;
 }
 
-.goal-list__actions {
+.goal-card__title {
+    font-size: 0.84rem;
+    font-weight: 650;
+    color: var(--ink-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.goal-card__actions {
     display: flex;
-    gap: 0.4rem;
+    gap: 0.15rem;
+    flex-shrink: 0;
+}
+
+.goal-card__figure {
+    margin: 0.15rem 0 0.1rem;
+    font-size: 1.1rem;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+}
+
+/* Keep each figure ("42.00 km", "/ 40.00 km") intact so a value never breaks
+   between its number and unit when the rail is narrow. */
+.goal-card__figure strong,
+.goal-card__figure span {
+    white-space: nowrap;
+}
+
+.goal-card__figure span {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.goal-card__meta {
+    margin: 0;
+    font-size: 0.74rem;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+}
+
+.goal-card__dot {
+    margin: 0 0.35rem;
+}
+
+.progress-ring {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.progress-ring__value {
+    position: absolute;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.65rem;
+    height: 1.65rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.icon-btn:hover:not(:disabled) {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--ink);
+}
+
+.icon-btn--danger:hover:not(:disabled) {
+    color: var(--danger);
+    border-color: var(--danger-soft);
+}
+
+.icon-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.goals-panel__add {
+    margin-top: var(--space-3);
+    width: 100%;
 }
 
 .goal-form {
     display: grid;
     gap: 0.6rem;
-    margin-top: 0.75rem;
-    padding: 0.75rem;
+    margin-top: var(--space-3);
+    padding: var(--space-3);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--surface-muted);
 }
 
+.goal-form select,
+.goal-form input {
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--ink);
+}
+
 .goal-form__actions {
     display: flex;
     gap: 0.5rem;
+}
+
+/* ---------------------------------------------------------------- */
+/* Dashboard layout & rail widgets                                   */
+/* ---------------------------------------------------------------- */
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.9fr) minmax(300px, 1fr);
+    gap: var(--space-4);
+    align-items: start;
+}
+
+.dashboard-grid__main,
+.dashboard-grid__rail {
+    min-width: 0;
+}
+
+.dashboard-grid__rail {
+    position: sticky;
+    top: var(--space-4);
+}
+
+.plan-compare {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.plan-compare__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.plan-compare__label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.plan-compare__value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+}
+
+.plan-compare__track {
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--border);
+    overflow: hidden;
+    margin-bottom: var(--space-3);
+}
+
+.plan-compare__fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 240ms ease;
+}
+
+.plan-compare__fill--planned {
+    background: color-mix(in srgb, var(--chart-2) 45%, transparent);
+}
+
+.plan-compare__fill--completed {
+    background: var(--chart-2);
+}
+
+.plan-compare__note {
+    margin: 0;
+    font-size: 0.76rem;
+    color: var(--muted);
+}
+
+/* Personal bests */
+
+.pb-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.4rem;
+}
+
+.pb-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0.55rem 0.6rem;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    text-decoration: none;
+    color: inherit;
+    min-width: 0;
+    transition: background 140ms ease, border-color 140ms ease;
+}
+
+.pb-row:hover {
+    background: var(--surface-muted);
+    border-color: var(--border);
+}
+
+.pb-row__rank {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: var(--surface-muted);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.pb-row__rank--1 {
+    background: color-mix(in srgb, var(--chart-4) 22%, transparent);
+    color: var(--chart-4);
+    border-color: color-mix(in srgb, var(--chart-4) 40%, transparent);
+}
+
+.pb-row__rank--2 {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.pb-row__meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.pb-row__meta strong {
+    font-size: 0.88rem;
+}
+
+.pb-row__meta small {
+    font-size: 0.74rem;
+    color: var(--muted);
+}
+
+.pb-row__time {
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    flex-shrink: 0;
+}
+
+/* Recent trainings list */
+
+.activity-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.3rem;
+}
+
+.activity-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0.6rem 0.7rem;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    text-decoration: none;
+    color: inherit;
+    min-width: 0;
+    transition: background 140ms ease, border-color 140ms ease;
+}
+
+.activity-row:hover {
+    background: var(--surface-muted);
+    border-color: var(--border);
+}
+
+.activity-row__marker {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--accent);
+    flex-shrink: 0;
+}
+
+.activity-row__meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.activity-row__meta strong {
+    font-size: 0.9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.activity-row__meta small {
+    font-size: 0.74rem;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.activity-row__stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+}
+
+.activity-row__stats strong {
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.activity-row__stats small {
+    font-size: 0.74rem;
+    color: var(--muted);
 }
 
 /* ---------------------------------------------------------------- */
@@ -994,6 +1513,13 @@ button.week-agenda__entry--completed {
     border: 1px solid transparent;
     font: inherit;
     width: 100%;
+}
+
+.week-agenda__entry .badge {
+    align-self: flex-start;
+    white-space: nowrap;
+    font-size: 0.68rem;
+    padding: 0.18rem 0.45rem;
 }
 
 .week-agenda__entry-body strong {
@@ -1205,6 +1731,18 @@ button.week-agenda__entry--completed {
 /* Responsive                                                        */
 /* ---------------------------------------------------------------- */
 
+/* The dashboard's two-column layout needs room for a readable chart plus the
+   rail; below this it stacks rather than squeezing both into unusable widths. */
+@media (max-width: 1180px) {
+    .dashboard-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .dashboard-grid__rail {
+        position: static;
+    }
+}
+
 @media (max-width: 960px) {
     .app-layout {
         grid-template-columns: 1fr;
@@ -1277,5 +1815,22 @@ button.week-agenda__entry--completed {
 
     .filter-bar__field input {
         width: 100%;
+    }
+
+    .card {
+        padding: var(--space-4);
+    }
+
+    .kpi-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+
+    .metric-card__value {
+        font-size: 1.3rem;
+    }
+
+    .card__header-actions {
+        width: 100%;
+        justify-content: flex-start;
     }
 }

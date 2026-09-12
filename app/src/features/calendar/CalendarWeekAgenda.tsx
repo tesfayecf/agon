@@ -39,7 +39,7 @@ export const CalendarWeekAgenda = ({ days, onSelectTraining, onChanged }: Calend
                         {day.planned.map((p, pIdx) => (
                             <div key={p.id ?? `template-${pIdx}`} className="week-agenda__entry week-agenda__entry--planned">
                                 <Badge tone={p.isCompleted ? "success" : p.isTemplateDefault ? "neutral" : "warning"}>
-                                    {p.isCompleted ? "✓ Planned · done" : p.isTemplateDefault ? "◌ Template default" : "○ Planned"}
+                                    {p.isCompleted ? "✓ Done" : p.isTemplateDefault ? "◌ Template" : "○ Planned"}
                                 </Badge>
                                 <div className="week-agenda__entry-body">
                                     <strong>{p.title || p.trainingType || "Planned session"}</strong>
