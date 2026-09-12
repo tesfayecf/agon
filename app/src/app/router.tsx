@@ -3,6 +3,7 @@ import { createBrowserRouter } from "react-router-dom";
 import { ActivityPage } from "../features/activity/ActivityPage";
 import { TracksPage } from "../features/activity/TracksPage";
 import { TrackDetailPage } from "../features/activity/TrackDetailPage";
+import { CalendarPage } from "../features/calendar/CalendarPage";
 import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { SettingsPage } from "../features/settings/SettingsPage";
 import { AppRouteError } from "./AppRouteError";
@@ -18,6 +19,10 @@ export const router = createBrowserRouter([
             {
                 index: true,
                 element: <DashboardPage />,
+            },
+            {
+                path: "calendar",
+                element: <CalendarPage />,
             },
             {
                 path: "tracks",

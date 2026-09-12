@@ -2,6 +2,13 @@ import { useState, type ReactElement } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { uploadActivityFiles } from "../features/activity/activity.service";
 
+const NAV_ITEMS = [
+    { to: "/", label: "Dashboard", end: true, icon: "▦" },
+    { to: "/calendar", label: "Calendar", end: false, icon: "▤" },
+    { to: "/tracks", label: "Trainings", end: false, icon: "≣" },
+    { to: "/settings", label: "Settings", end: false, icon: "⚙" },
+];
+
 export const AppShell = (): ReactElement => {
     const navigate = useNavigate();
     const [isUploading, setIsUploading] = useState(false);
@@ -22,75 +29,42 @@ export const AppShell = (): ReactElement => {
     };
 
     return (
-        <div style={{ display: "grid", gridTemplateColumns: "250px 1fr", minHeight: "100vh" }}>
-            <aside style={{
-                background: "rgba(255, 252, 247, 0.95)",
-                borderRight: "1px solid var(--line)",
-                padding: "2rem 1.5rem",
-                display: "flex",
-                flexDirection: "column",
-                gap: "2rem",
-                position: "sticky",
-                top: 0,
-                height: "100vh"
-            }}>
-                <div>
-                    <h2 style={{ margin: 0, fontSize: "1.5rem", letterSpacing: "-0.04em", color: "var(--accent)" }}>Agon</h2>
-                    <p style={{ margin: "0.2rem 0 0", fontSize: "0.75rem", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Running Training</p>
+        <div className="app-layout">
+            <aside className="sidebar">
+                <div className="sidebar__brand">
+                    <span className="sidebar__brand-mark" aria-hidden="true">A</span>
+                    <div>
+                        <p className="sidebar__brand-name">Agon</p>
+                        <p className="sidebar__brand-sub">Training Log</p>
+                    </div>
                 </div>
 
-                <label className="button-link button-link--primary" style={{
-                    cursor: "pointer",
-                    padding: "0.8rem 1.2rem",
-                    textAlign: "center",
-                    display: "block",
-                    fontWeight: 700,
-                    borderRadius: "999px"
-                }}>
-                    <span>{isUploading ? "Uploading..." : "+ Upload Track"}</span>
-                    <input type="file" multiple accept=".fit,.tcx" onChange={handleSidebarUpload} style={{ display: "none" }} />
+                <label className="btn btn-primary sidebar__upload file-input-btn">
+                    <span>{isUploading ? "Uploading…" : "+ Upload Training"}</span>
+                    <input type="file" multiple accept=".fit,.tcx" onChange={handleSidebarUpload} disabled={isUploading} />
                 </label>
 
-                <nav style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                    <NavLink to="/" end style={({ isActive }) => ({
-                        padding: "0.8rem 1rem",
-                        borderRadius: "0.8rem",
-                        textDecoration: "none",
-                        fontWeight: 600,
-                        background: isActive ? "rgba(15, 118, 110, 0.08)" : "transparent",
-                        color: isActive ? "var(--accent)" : "var(--ink)",
-                    })}>
-                        Dashboard
-                    </NavLink>
-                    <NavLink to="/tracks" style={({ isActive }) => ({
-                        padding: "0.8rem 1rem",
-                        borderRadius: "0.8rem",
-                        textDecoration: "none",
-                        fontWeight: 600,
-                        background: isActive ? "rgba(15, 118, 110, 0.08)" : "transparent",
-                        color: isActive ? "var(--accent)" : "var(--ink)",
-                    })}>
-                        Tracks & Trainings
-                    </NavLink>
-                    <NavLink to="/settings" style={({ isActive }) => ({
-                        padding: "0.8rem 1rem",
-                        borderRadius: "0.8rem",
-                        textDecoration: "none",
-                        fontWeight: 600,
-                        background: isActive ? "rgba(15, 118, 110, 0.08)" : "transparent",
-                        color: isActive ? "var(--accent)" : "var(--ink)",
-                    })}>
-                        Settings
-                    </NavLink>
+                <nav className="sidebar__nav">
+                    {NAV_ITEMS.map((item) => (
+                        <NavLink
+                            key={item.to}
+                            to={item.to}
+                            end={item.end}
+                            className={({ isActive }) => `nav-link${isActive ? " is-active" : ""}`}
+                        >
+                            <span className="nav-link__icon" aria-hidden="true">{item.icon}</span>
+                            {item.label}
+                        </NavLink>
+                    ))}
                 </nav>
 
-                <footer style={{ marginTop: "auto", fontSize: "0.75rem", color: "var(--muted)" }}>
-                    <p style={{ margin: 0 }}>© {new Date().getFullYear()} Agon Coach</p>
-                    <p style={{ margin: "0.2rem 0 0" }}>v1.3.0 · Offline Ready</p>
+                <footer className="sidebar__footer">
+                    <p>© {new Date().getFullYear()} Agon</p>
+                    <p>v1.4.0</p>
                 </footer>
             </aside>
 
-            <main style={{ padding: "2rem 3rem", overflowY: "auto", maxHeight: "100vh" }}>
+            <main className="app-content">
                 <Outlet />
             </main>
         </div>

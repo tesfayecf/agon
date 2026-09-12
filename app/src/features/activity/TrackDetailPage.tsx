@@ -3,11 +3,16 @@ import { useParams, Link } from "react-router-dom";
 import { fetchActivityFileById, updateActivityFileMetadata, type ActivityFile } from "./activity.service";
 import { TimeSeriesChart } from "./TimeSeriesChart";
 import { TrackCanvasView } from "./TrackCanvasView";
+import { Card } from "../../shared/components/Card";
+import { MetricCard } from "../../shared/components/MetricCard";
+import { LoadingState, ErrorState } from "../../shared/components/StateViews";
+import { formatDate, formatDistance, formatDuration, formatElevation, formatHeartRate } from "../../shared/utils/format";
 
 export const TrackDetailPage = (): ReactElement => {
     const { id } = useParams<{ id: string }>();
     const [file, setFile] = useState<ActivityFile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
@@ -15,77 +20,105 @@ export const TrackDetailPage = (): ReactElement => {
 
     useEffect(() => {
         if (!id) return;
+        setIsLoading(true);
         fetchActivityFileById(id)
             .then((res) => {
                 setFile(res);
                 setName(res.name || res.filename);
                 setDescription(res.description || "");
                 setTags(res.tags || "");
-                setIsLoading(false);
             })
-            .catch(() => setIsLoading(false));
+            .catch((err) => setError(err instanceof Error ? err.message : "Could not load training."))
+            .finally(() => setIsLoading(false));
     }, [id]);
 
     const handleSave = async () => {
         if (!id) return;
-        const updated = await updateActivityFileMetadata(id, { name, description, tags });
-        setFile(updated);
-        setIsEditing(false);
+        try {
+            const updated = await updateActivityFileMetadata(id, { name, description, tags });
+            setFile(updated);
+            setIsEditing(false);
+        } catch (err) {
+            alert(err instanceof Error ? err.message : "Failed to update metadata");
+        }
     };
 
-    if (isLoading) return <p className="panel__copy" style={{ padding: "2rem" }}>Loading…</p>;
-    if (!file) return <div className="error-banner">Training not found</div>;
+    if (isLoading) {
+        return (
+            <Card>
+                <LoadingState label="Loading training…" />
+            </Card>
+        );
+    }
+
+    if (error !== null) {
+        return <ErrorState message={error} />;
+    }
+
+    if (!file) {
+        return <ErrorState message="Training not found." />;
+    }
 
     return (
-        <section className="upload-grid" aria-live="polite">
-            <article className="upload-panel" style={{ gridColumn: "span 12" }}>
-                <div className="panel__header">
+        <section aria-live="polite">
+            <Card>
+                <div className="page-header">
                     <div>
-                        <Link to="/tracks" style={{ fontSize: "0.85rem", color: "var(--accent)", textDecoration: "none" }}>← Back</Link>
-                        <h2>{isEditing ? "Edit Training" : (file.name || file.filename)}</h2>
+                        <Link to="/tracks" className="card__link">
+                            ← Back to trainings
+                        </Link>
+                        <h1 className="page-header__title" style={{ marginTop: "0.4rem" }}>
+                            {isEditing ? "Edit training" : file.name || file.filename}
+                        </h1>
                     </div>
-                    <div>
+                    <div className="page-header__actions">
                         {isEditing ? (
-                            <div style={{ display: "flex", gap: "0.5rem" }}>
-                                <button type="button" onClick={() => setIsEditing(false)}>Cancel</button>
-                                <button type="button" className="button-link--primary" onClick={handleSave}>Save</button>
-                            </div>
+                            <>
+                                <button type="button" className="btn btn-sm" onClick={() => setIsEditing(false)}>
+                                    Cancel
+                                </button>
+                                <button type="button" className="btn btn-primary btn-sm" onClick={handleSave}>
+                                    Save
+                                </button>
+                            </>
                         ) : (
-                            <button type="button" onClick={() => setIsEditing(true)}>Edit</button>
+                            <button type="button" className="btn btn-sm" onClick={() => setIsEditing(true)}>
+                                Edit
+                            </button>
                         )}
                     </div>
                 </div>
 
+                {file.status === "error" && <ErrorState message={file.error ?? "This file could not be processed."} />}
+
                 {isEditing ? (
-                    <div style={{ display: "grid", gap: "0.75rem", marginTop: "1rem" }}>
-                        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" style={{ width: "100%", padding: "0.5rem" }} />
-                        <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" rows={3} style={{ width: "100%", padding: "0.5rem" }} />
-                        <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="Tags (comma-separated)" style={{ width: "100%", padding: "0.5rem" }} />
+                    <div style={{ display: "grid", gap: "0.75rem", marginTop: "1rem", maxWidth: "32rem" }}>
+                        <div className="form-field">
+                            <label htmlFor="track-name">Name</label>
+                            <input id="track-name" value={name} onChange={(e) => setName(e.target.value)} />
+                        </div>
+                        <div className="form-field">
+                            <label htmlFor="track-description">Description</label>
+                            <textarea id="track-description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+                        </div>
+                        <div className="form-field">
+                            <label htmlFor="track-tags">Tags (comma-separated)</label>
+                            <input id="track-tags" value={tags} onChange={(e) => setTags(e.target.value)} />
+                        </div>
                     </div>
                 ) : (
                     <div style={{ marginTop: "1rem" }}>
-                        {file.description && <p className="panel__copy">{file.description}</p>}
-                        {file.tags && <p style={{ fontSize: "0.85rem", color: "var(--accent)" }}>Tags: {file.tags}</p>}
+                        <p style={{ color: "var(--muted)", margin: 0 }}>{formatDate(file.activityDate)}</p>
+                        {file.description && <p style={{ marginTop: "0.5rem" }}>{file.description}</p>}
+                        {file.tags && <p style={{ fontSize: "0.85rem", color: "var(--accent)", marginTop: "0.4rem" }}>Tags: {file.tags}</p>}
                     </div>
                 )}
 
-                <div className="metric-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "1rem", marginTop: "1rem" }}>
-                    <article style={{ background: "rgba(15, 118, 110, 0.05)", padding: "1rem", borderRadius: "1rem" }}>
-                        <span>Distance</span>
-                        <strong>{file.distanceMeters ? `${(file.distanceMeters / 1000).toFixed(2)} km` : "N/A"}</strong>
-                    </article>
-                    <article style={{ background: "rgba(15, 118, 110, 0.05)", padding: "1rem", borderRadius: "1rem" }}>
-                        <span>Duration</span>
-                        <strong>{file.durationSeconds ? `${(file.durationSeconds / 60).toFixed(1)} min` : "N/A"}</strong>
-                    </article>
-                    <article style={{ background: "rgba(15, 118, 110, 0.05)", padding: "1rem", borderRadius: "1rem" }}>
-                        <span>Elevation</span>
-                        <strong>{file.elevationGain ? `${file.elevationGain.toFixed(0)} m` : "N/A"}</strong>
-                    </article>
-                    <article style={{ background: "rgba(15, 118, 110, 0.05)", padding: "1rem", borderRadius: "1rem" }}>
-                        <span>Avg HR</span>
-                        <strong>{file.avgHeartRate ? `${file.avgHeartRate.toFixed(0)} bpm` : "N/A"}</strong>
-                    </article>
+                <div className="metric-grid" style={{ marginTop: "1.25rem" }}>
+                    <MetricCard label="Distance" value={formatDistance(file.distanceMeters)} isAvailable={(file.distanceMeters ?? 0) > 0} />
+                    <MetricCard label="Duration" value={formatDuration(file.durationSeconds)} isAvailable={(file.durationSeconds ?? 0) > 0} />
+                    <MetricCard label="Elevation" value={formatElevation(file.elevationGain)} isAvailable={(file.elevationGain ?? 0) > 0} />
+                    <MetricCard label="Avg heart rate" value={formatHeartRate(file.avgHeartRate)} isAvailable={(file.avgHeartRate ?? 0) > 0} />
                 </div>
 
                 {file.records && file.records.length > 0 && (
@@ -94,7 +127,11 @@ export const TrackDetailPage = (): ReactElement => {
                         <TrackCanvasView records={file.records} />
                     </>
                 )}
-            </article>
+
+                {(!file.records || file.records.length === 0) && file.status === "success" && (
+                    <p style={{ marginTop: "1rem", color: "var(--muted)" }}>This file parsed but did not contain track records.</p>
+                )}
+            </Card>
         </section>
     );
 };
