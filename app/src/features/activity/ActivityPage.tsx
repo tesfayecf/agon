@@ -1,6 +1,8 @@
-import { useMemo, useState, type ChangeEvent, type ReactElement } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type ReactElement } from "react";
 
-import { uploadActivityFiles, type ActivityFile } from "./activity.service";
+import { fetchActivityFiles, uploadActivityFiles, type ActivityFile } from "./activity.service";
+import { TimeSeriesChart } from "./TimeSeriesChart";
+import { TrackCanvasView } from "./TrackCanvasView";
 
 const emptyList: ActivityFile[] = [];
 
@@ -8,7 +10,31 @@ export const ActivityPage = (): ReactElement => {
     const [files, setFiles] = useState<ActivityFile[]>(emptyList);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let mounted = true;
+        fetchActivityFiles()
+            .then((res) => {
+                if (!mounted) return;
+                const loaded = res.files ?? [];
+                setFiles(loaded);
+                const firstLoaded = loaded[0];
+                if (firstLoaded !== undefined) {
+                    setSelectedId(firstLoaded.id);
+                }
+            })
+            .catch(() => {
+                // Ignore initial fetch errors
+            })
+            .finally(() => {
+                if (mounted) setIsLoading(false);
+            });
+        return () => {
+            mounted = false;
+        };
+    }, []);
 
     const selectedFile = useMemo(() => files.find((file) => file.id === selectedId) ?? files[0] ?? null, [files, selectedId]);
 
@@ -80,9 +106,11 @@ export const ActivityPage = (): ReactElement => {
                     </div>
                 </div>
 
-                {files.length === 0 && <p className="panel__copy">No files uploaded yet.</p>}
+                {isLoading && <p className="panel__copy">Loading files from database…</p>}
 
-                {files.length > 0 && (
+                {!isLoading && files.length === 0 && <p className="panel__copy">No files uploaded yet.</p>}
+
+                {!isLoading && files.length > 0 && (
                     <ul className="file-list">
                         {files.map((file) => (
                             <li key={file.id}>
@@ -94,7 +122,7 @@ export const ActivityPage = (): ReactElement => {
                                     <span className="file-meta">
                                         <strong>{file.filename}</strong>
                                         <small>
-                                            {file.fileType} · {file.recordCount} records · {file.status}
+                                            {file.fileType} · {file.recordCount} records
                                         </small>
                                     </span>
                                     <span className={`status-pill ${file.status === "success" ? "status-pill--ready" : "status-pill--offline"}`}>
@@ -110,12 +138,12 @@ export const ActivityPage = (): ReactElement => {
             <article className="upload-detail">
                 <div className="panel__header">
                     <div>
-                        <p className="eyebrow">Detail</p>
+                        <p className="eyebrow">Detail & Visualization</p>
                         <h2>{selectedFile ? selectedFile.filename : "No activity selected"}</h2>
                     </div>
                 </div>
 
-                {selectedFile === null && <p className="panel__copy">Upload a FIT or TCX file to inspect its data.</p>}
+                {selectedFile === null && <p className="panel__copy">Upload or select a FIT or TCX file to inspect its data and track visualizations.</p>}
 
                 {selectedFile !== null && selectedFile.status === "error" && (
                     <p className="error-banner">{selectedFile.error ?? "This file could not be processed."}</p>
@@ -142,10 +170,20 @@ export const ActivityPage = (): ReactElement => {
                             </article>
                         </div>
 
-                        {selectedFile.records.length === 0 && <p className="panel__copy">This file parsed but did not contain activity records.</p>}
+                        {selectedFile.records && selectedFile.records.length > 0 && (
+                            <>
+                                <TimeSeriesChart records={selectedFile.records} />
+                                <TrackCanvasView records={selectedFile.records} />
+                            </>
+                        )}
 
-                        {selectedFile.records.length > 0 && (
-                            <div style={{ overflowX: "auto" }}>
+                        {(!selectedFile.records || selectedFile.records.length === 0) && (
+                            <p className="panel__copy" style={{ marginTop: "1rem" }}>This file parsed but did not contain activity records.</p>
+                        )}
+
+                        {selectedFile.records && selectedFile.records.length > 0 && (
+                            <div style={{ overflowX: "auto", marginTop: "1rem" }}>
+                                <h3>Sample Records</h3>
                                 <table className="record-table">
                                     <thead>
                                         <tr>

@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"log/slog"
 	"mime/multipart"
@@ -245,5 +246,82 @@ func TestUploadActivityEndpointRejectsMalformedFIT(t *testing.T) {
 
 	if response.Code != http.StatusBadRequest {
 		t.Fatalf("expected status %d, got %d with body %s", http.StatusBadRequest, response.Code, response.Body.String())
+	}
+}
+
+func TestListAndGetActivitiesEndpoints(t *testing.T) {
+	t.Parallel()
+
+	dbPath := t.TempDir() + "/test.db"
+	server := NewServer(config.Config{
+		AllowedOrigins: []string{"http://localhost:3000"},
+		Database: config.DatabaseConfig{
+			Enabled: true,
+			Path:    dbPath,
+		},
+		HTTP: config.HTTPConfig{
+			ReadHeaderTimeout: time.Second,
+			ReadTimeout:       time.Second,
+			WriteTimeout:      time.Second,
+			IdleTimeout:       time.Second,
+		},
+	}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+
+	// First list activities (should be empty array)
+	reqList := httptest.NewRequest(http.MethodGet, "/api/activities", nil)
+	respList := httptest.NewRecorder()
+	server.Handler.ServeHTTP(respList, reqList)
+
+	if respList.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", respList.Code)
+	}
+
+	// Upload a file
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("files", "test.tcx")
+	if err != nil {
+		t.Fatalf("create form file: %v", err)
+	}
+	tcx := `<?xml version="1.0" encoding="UTF-8"?><TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"><Activities><Activity Sport="Running"><Id>2026-09-08T17:05:27Z</Id><Lap StartTime="2026-09-08T17:05:27Z"><TotalTimeSeconds>10.0</TotalTimeSeconds><DistanceMeters>50.0</DistanceMeters><Track><Trackpoint><Time>2026-09-08T17:05:27Z</Time><Position><LatitudeDegrees>51.5</LatitudeDegrees><LongitudeDegrees>-0.1</LongitudeDegrees></Position></Trackpoint></Track></Lap></Activity></Activities></TrainingCenterDatabase>`
+	_, _ = part.Write([]byte(tcx))
+	_ = writer.Close()
+
+	reqUpload := httptest.NewRequest(http.MethodPost, "/api/activities/upload", bytes.NewReader(body.Bytes()))
+	reqUpload.Header.Set("Content-Type", writer.FormDataContentType())
+	respUpload := httptest.NewRecorder()
+	server.Handler.ServeHTTP(respUpload, reqUpload)
+
+	if respUpload.Code != http.StatusOK {
+		t.Fatalf("upload failed: %d, body: %s", respUpload.Code, respUpload.Body.String())
+	}
+
+	// Now list activities again
+	reqList2 := httptest.NewRequest(http.MethodGet, "/api/activities", nil)
+	respList2 := httptest.NewRecorder()
+	server.Handler.ServeHTTP(respList2, reqList2)
+
+	if respList2.Code != http.StatusOK || !strings.Contains(respList2.Body.String(), "test.tcx") {
+		t.Fatalf("expected list to contain test.tcx, got %s", respList2.Body.String())
+	}
+
+	// Extract file ID from upload response or list response
+	var listData struct {
+		Files []struct {
+			ID string `json:"id"`
+		} `json:"files"`
+	}
+	_ = json.Unmarshal(respList2.Body.Bytes(), &listData)
+	if len(listData.Files) == 0 {
+		t.Fatalf("expected at least 1 file in list response")
+	}
+
+	fileID := listData.Files[0].ID
+	reqGet := httptest.NewRequest(http.MethodGet, "/api/activities/"+fileID, nil)
+	respGet := httptest.NewRecorder()
+	server.Handler.ServeHTTP(respGet, reqGet)
+
+	if respGet.Code != http.StatusOK || !strings.Contains(respGet.Body.String(), "51.5") {
+		t.Fatalf("expected get response to contain trackpoint lat 51.5, got %d: %s", respGet.Code, respGet.Body.String())
 	}
 }

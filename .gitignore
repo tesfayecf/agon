@@ -1,6 +1,7 @@
 .tmp
 
-.garage
+.garage 
 .sqlite
-
 .go
+
+/backups

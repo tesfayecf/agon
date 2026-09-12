@@ -15,11 +15,20 @@ type HTTPConfig struct {
 	IdleTimeout       time.Duration
 }
 
+type S3Config struct {
+	Endpoint        string
+	Region          string
+	Bucket          string
+	AccessKeyID     string
+	SecretAccessKey string
+}
+
 type Config struct {
 	AppEnv         string
 	AllowedOrigins []string
 	Database       DatabaseConfig
 	HTTP           HTTPConfig
+	S3             S3Config
 }
 
 type DatabaseConfig struct {
@@ -29,7 +38,7 @@ type DatabaseConfig struct {
 }
 
 func Load() (Config, error) {
-	databasePath := getEnv("SQLITE_PATH", "")
+	databasePath := getEnv("SQLITE_PATH", "server/.tmp/app.db")
 	readHeaderTimeout, err := getDuration("HTTP_READ_HEADER_TIMEOUT", 5*time.Second)
 	if err != nil {
 		return Config{}, err
@@ -64,6 +73,13 @@ func Load() (Config, error) {
 			ReadTimeout:       readTimeout,
 			WriteTimeout:      writeTimeout,
 			IdleTimeout:       idleTimeout,
+		},
+		S3: S3Config{
+			Endpoint:        getEnv("S3_ENDPOINT", "http://127.0.0.1:5500"),
+			Region:          getEnv("S3_REGION", "local"),
+			Bucket:          getEnv("S3_BUCKET", "agon-files"),
+			AccessKeyID:     getEnv("S3_ACCESS_KEY_ID", "local-dev"),
+			SecretAccessKey: getEnv("S3_SECRET_ACCESS_KEY", "local-dev"),
 		},
 	}, nil
 }

@@ -255,7 +255,7 @@ func optionalFloat(value float64) *float64 {
 	return &value
 }
 
-func slugify(value string) string {
+func Slugify(value string) string {
 	base := strings.ToLower(value)
 	base = strings.ReplaceAll(base, " ", "-")
 	base = strings.Map(func(r rune) rune {
@@ -265,4 +265,8 @@ func slugify(value string) string {
 		return '-'
 	}, base)
 	return strings.Trim(base, "-.")
+}
+
+func slugify(value string) string {
+	return Slugify(value)
 }
