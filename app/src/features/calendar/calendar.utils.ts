@@ -89,3 +89,47 @@ export const formatWeekRangeLabel = (weekStart: Date): string => {
     const endLabel = weekEnd.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
     return `${startLabel} – ${endLabel}`;
 };
+
+export interface YearHeatmapDay {
+    date: Date;
+    key: string;
+    isInYear: boolean;
+    isToday: boolean;
+}
+
+export interface YearHeatmapWeek {
+    days: YearHeatmapDay[];
+    /** Set only on the first week column of a new month, for axis labels. */
+    monthLabel?: string;
+}
+
+/**
+ * Builds a GitHub-contributions-style week/day matrix covering an entire calendar year,
+ * padded to full Monday-first weeks at both ends so every column has exactly 7 days.
+ */
+export const getYearMatrix = (year: number, today: Date = new Date()): YearHeatmapWeek[] => {
+    const jan1 = new Date(year, 0, 1);
+    const dec31 = new Date(year, 11, 31);
+    const gridStart = new Date(year, 0, 1 - mondayFirstIndex(jan1));
+    const gridEnd = new Date(year, 11, 31 + (6 - mondayFirstIndex(dec31)));
+
+    const weeks: YearHeatmapWeek[] = [];
+    let lastLabeledMonth = -1;
+    for (let cursor = gridStart; cursor <= gridEnd; cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 7)) {
+        const days: YearHeatmapDay[] = [];
+        let monthLabel: string | undefined;
+        for (let i = 0; i < 7; i += 1) {
+            const date = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + i);
+            const isInYear = date.getFullYear() === year;
+            days.push({ date, key: toDateKey(date), isInYear, isToday: isSameDay(date, today) });
+            if (isInYear && date.getMonth() !== lastLabeledMonth && date.getDate() <= 7) {
+                monthLabel = date.toLocaleDateString(undefined, { month: "short" });
+                lastLabeledMonth = date.getMonth();
+            }
+        }
+        weeks.push({ days, monthLabel });
+    }
+    return weeks;
+};
+
+export const addYears = (year: number, delta: number): number => year + delta;

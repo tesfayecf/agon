@@ -53,6 +53,13 @@
     --chart-axis-text: var(--muted);
     --chart-surface: var(--surface-muted);
 
+    /* Activity heatmap (year view) — increasing training-volume intensity */
+    --heat-0: var(--surface-muted);
+    --heat-1: #cde9e3;
+    --heat-2: #8fd0c2;
+    --heat-3: #46b39a;
+    --heat-4: #0f6b5c;
+
     /* Elevation */
     --shadow-sm: 0 1px 2px rgba(20, 24, 29, 0.06);
     --shadow-md: 0 4px 16px rgba(20, 24, 29, 0.08);
@@ -103,6 +110,12 @@
         --chart-4: #fbbf24;
         --chart-5: #a78bfa;
 
+        --heat-0: var(--surface-muted);
+        --heat-1: #1f4a42;
+        --heat-2: #2c7566;
+        --heat-3: #3fa38c;
+        --heat-4: #6fd6c2;
+
         --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
         --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
     }
@@ -138,6 +151,12 @@
     --chart-3: #f87171;
     --chart-4: #fbbf24;
     --chart-5: #a78bfa;
+
+    --heat-0: var(--surface-muted);
+    --heat-1: #1f4a42;
+    --heat-2: #2c7566;
+    --heat-3: #3fa38c;
+    --heat-4: #6fd6c2;
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
