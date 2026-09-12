@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Link } from "react-router-dom";
-import { fetchActivityFiles, uploadActivityFiles, type ActivityFile, type ActivityFilterParams } from "./activity.service";
+import { deleteActivityFile, fetchActivityFiles, uploadActivityFiles, type ActivityFile, type ActivityFilterParams } from "./activity.service";
 import { PageHeader } from "../../shared/components/PageHeader";
 import { Card } from "../../shared/components/Card";
 import { LoadingState, EmptyState, ErrorState } from "../../shared/components/StateViews";
@@ -39,6 +39,7 @@ export const TracksPage = (): ReactElement => {
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     const loadFiles = (activeFilters: FilterState) => {
         setIsLoading(true);
@@ -67,6 +68,21 @@ export const TracksPage = (): ReactElement => {
         } finally {
             setIsUploading(false);
             e.target.value = "";
+        }
+    };
+
+    const handleDelete = async (file: ActivityFile) => {
+        const label = file.name || file.filename;
+        if (!window.confirm(`Delete "${label}"? This cannot be undone.`)) return;
+        setDeletingId(file.id);
+        setError(null);
+        try {
+            await deleteActivityFile(file.id);
+            setFiles((prev) => prev.filter((item) => item.id !== file.id));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Could not delete training.");
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -173,7 +189,7 @@ export const TracksPage = (): ReactElement => {
                 {!isLoading && files.length > 0 && (
                     <ul className="record-list">
                         {files.map((file) => (
-                            <li key={file.id}>
+                            <li key={file.id} className="record-list__row">
                                 <Link to={`/tracks/${file.id}`} className="record-list__item">
                                     <div className="record-list__meta">
                                         <strong>{file.name || file.filename}</strong>
@@ -194,6 +210,16 @@ export const TracksPage = (): ReactElement => {
                                         )}
                                     </div>
                                 </Link>
+                                <button
+                                    type="button"
+                                    className="icon-btn icon-btn--danger record-list__delete"
+                                    title="Delete training"
+                                    aria-label={`Delete ${file.name || file.filename}`}
+                                    disabled={deletingId === file.id}
+                                    onClick={() => handleDelete(file)}
+                                >
+                                    ✕
+                                </button>
                             </li>
                         ))}
                     </ul>

@@ -219,6 +219,33 @@ func registerActivityRoutes(mux *http.ServeMux, db *sql.DB, store storage.Storag
 		WriteJSON(w, http.StatusOK, rec)
 	})
 
+	// Delete a training: removes the stored payload and the DB record
+	mux.HandleFunc("DELETE /api/activities/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			WriteError(w, http.StatusBadRequest, "missing file id")
+			return
+		}
+		if db == nil {
+			WriteError(w, http.StatusInternalServerError, "database not available")
+			return
+		}
+		rec, err := activities.GetFileRecord(r.Context(), db, id)
+		if err != nil {
+			WriteError(w, http.StatusNotFound, fmt.Sprintf("file not found: %v", err))
+			return
+		}
+		if err := activities.DeleteFileRecord(r.Context(), db, id); err != nil {
+			WriteError(w, http.StatusNotFound, err.Error())
+			return
+		}
+		// Best effort: the record is already gone, so a storage failure must not fail the request.
+		if store != nil && rec.S3Key != "" {
+			_ = store.Delete(r.Context(), rec.S3Key)
+		}
+		WriteJSON(w, http.StatusOK, map[string]any{"id": id, "deleted": true})
+	})
+
 	// Upload files to S3 and save metadata to DB
 	mux.HandleFunc("POST /api/activities/upload", func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseMultipartForm(32 << 20); err != nil {

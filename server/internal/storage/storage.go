@@ -19,6 +19,7 @@ import (
 type Storage interface {
 	Upload(ctx context.Context, key string, data []byte, contentType string) error
 	Get(ctx context.Context, key string) ([]byte, error)
+	Delete(ctx context.Context, key string) error
 }
 
 type S3Storage struct {
@@ -134,4 +135,24 @@ func (s *S3Storage) Get(ctx context.Context, key string) ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+func (s *S3Storage) Delete(ctx context.Context, key string) error {
+	if !s.useFallback && s.client != nil {
+		_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+			Bucket: aws.String(s.bucket),
+			Key:    aws.String(key),
+		})
+		if err != nil {
+			return fmt.Errorf("delete object from S3: %w", err)
+		}
+	}
+
+	// Always clean up the local copy written by Upload.
+	localPath := filepath.Join(s.fallbackDir, filepath.FromSlash(key))
+	if err := os.Remove(localPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("delete local object: %w", err)
+	}
+
+	return nil
 }

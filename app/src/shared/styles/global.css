@@ -230,6 +230,15 @@
     background: var(--surface-muted);
 }
 
+.btn-danger {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.btn-danger:hover {
+    background: var(--danger-soft);
+}
+
 .btn-sm {
     height: 2rem;
     padding: 0 0.75rem;
@@ -521,6 +530,21 @@
     padding: 0;
     display: grid;
     gap: 0.6rem;
+}
+
+.record-list__row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.record-list__row .record-list__item {
+    flex: 1;
+    min-width: 0;
+}
+
+.record-list__delete {
+    flex-shrink: 0;
 }
 
 .record-list__item {
@@ -1162,6 +1186,22 @@
 /* ---------------------------------------------------------------- */
 /* Dashboard layout & rail widgets                                   */
 /* ---------------------------------------------------------------- */
+
+/* The dashboard's top-level blocks are a mix of cards and grid wrappers, so
+   spacing lives on the stack rather than on a `.card + .card` sibling rule that
+   silently does nothing when a card is followed by a wrapper div. */
+.dashboard-stack {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.dashboard-stack > .kpi-grid {
+    margin-bottom: 0;
+}
+
+.dashboard-stack > .card + .card {
+    margin-top: 0;
+}
 
 .dashboard-grid {
     display: grid;
@@ -1928,13 +1968,56 @@ button.week-agenda__entry--completed {
         height: auto;
         flex-direction: row;
         align-items: center;
+        justify-content: space-between;
         flex-wrap: wrap;
+        gap: 0.75rem;
         padding: 1rem;
+        /* The shell is one column here, so the divider belongs underneath. */
+        border-right: none;
+        border-bottom: 1px solid var(--border);
     }
 
+    /* Narrow screens get a native-feeling icon-only tab bar pinned to the
+       bottom instead of nav links crowding the top of every page. */
     .sidebar__nav {
+        position: fixed;
+        inset: auto 0 0 0;
+        z-index: 30;
         flex-direction: row;
-        flex-wrap: wrap;
+        gap: 0;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        padding: 0.35rem 0.5rem;
+        padding-bottom: calc(0.35rem + env(safe-area-inset-bottom));
+    }
+
+    .sidebar__nav .nav-link {
+        flex: 1;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0;
+        min-height: 2.75rem;
+        padding: 0.45rem 0.25rem;
+    }
+
+    .sidebar__nav .nav-link__icon {
+        width: auto;
+        height: auto;
+        font-size: 1.3rem;
+        line-height: 1;
+    }
+
+    /* Visually hidden, still announced. */
+    .sidebar__nav .nav-link__label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
     }
 
     .sidebar__footer {
@@ -1944,6 +2027,8 @@ button.week-agenda__entry--completed {
     .app-content {
         max-height: none;
         padding: 1.5rem;
+        /* Clear the fixed tab bar so the last card is never trapped behind it. */
+        padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
     }
 
     .calendar__day {

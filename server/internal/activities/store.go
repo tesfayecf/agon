@@ -129,6 +129,21 @@ func UpdateFileRecordMetadata(ctx context.Context, db *sql.DB, id, name, descrip
 	return nil
 }
 
+func DeleteFileRecord(ctx context.Context, db *sql.DB, id string) error {
+	if db == nil {
+		return fmt.Errorf("database not available")
+	}
+	res, err := db.ExecContext(ctx, `DELETE FROM files WHERE id = ?`, id)
+	if err != nil {
+		return fmt.Errorf("delete file record: %w", err)
+	}
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("file record not found: %s", id)
+	}
+	return nil
+}
+
 func ListFileRecords(ctx context.Context, db *sql.DB) ([]FileRecord, error) {
 	if db == nil {
 		return []FileRecord{}, nil

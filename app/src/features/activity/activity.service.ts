@@ -44,6 +44,13 @@ export const updateActivityFileMetadata = async (
     });
 };
 
+export const deleteActivityFile = async (id: string): Promise<void> => {
+    await apiRequest<{ id: string; deleted: boolean }>({
+        method: "DELETE",
+        path: `/api/activities/${encodeURIComponent(id)}`,
+    });
+};
+
 export interface WeeklyTrendPoint {
     weekStart: string;
     distanceMeters: number;

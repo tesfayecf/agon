@@ -62,3 +62,46 @@ func TestFileRecordsStore(t *testing.T) {
 		t.Fatalf("got ID %s, want %s", got.ID, rec.ID)
 	}
 }
+
+func TestDeleteFileRecord(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	databasePath := filepath.Join(t.TempDir(), "delete_test.db")
+	db, err := sqlite.Open(ctx, sqlite.Config{Path: databasePath})
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	defer db.Close()
+
+	if err := EnsureTable(ctx, db); err != nil {
+		t.Fatalf("ensure table: %v", err)
+	}
+
+	rec := FileRecord{
+		ID:       "fit-delete-me",
+		Filename: "delete.fit",
+		FileType: "FIT",
+		S3Key:    "activities/fit-delete-me/delete.fit",
+		Status:   "success",
+	}
+	if err := InsertFileRecord(ctx, db, rec); err != nil {
+		t.Fatalf("insert record: %v", err)
+	}
+
+	if err := DeleteFileRecord(ctx, db, rec.ID); err != nil {
+		t.Fatalf("delete record: %v", err)
+	}
+
+	records, err := ListFileRecords(ctx, db)
+	if err != nil {
+		t.Fatalf("list records: %v", err)
+	}
+	if len(records) != 0 {
+		t.Fatalf("expected 0 records after delete, got %d", len(records))
+	}
+
+	if err := DeleteFileRecord(ctx, db, rec.ID); err == nil {
+		t.Fatal("expected error when deleting a missing record")
+	}
+}

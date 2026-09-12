@@ -65,7 +65,9 @@ export const AppShell = (): ReactElement => {
                             className={({ isActive }) => `nav-link${isActive ? " is-active" : ""}`}
                         >
                             <span className="nav-link__icon" aria-hidden="true">{item.icon}</span>
-                            {item.label}
+                            {/* Wrapped so the mobile bottom bar can hide the text
+                                visually while keeping it for screen readers. */}
+                            <span className="nav-link__label">{item.label}</span>
                         </NavLink>
                     ))}
                 </nav>

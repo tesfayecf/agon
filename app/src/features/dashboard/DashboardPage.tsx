@@ -113,7 +113,7 @@ export const DashboardPage = (): ReactElement => {
             )}
 
             {!isLoading && error === null && stats !== null && summary !== null && (
-                <>
+                <div className="dashboard-stack">
                     <div className="kpi-grid">
                         <MetricCard
                             label="This week"
@@ -426,7 +426,7 @@ export const DashboardPage = (): ReactElement => {
                             </Card>
                         </aside>
                     </div>
-                </>
+                </div>
             )}
         </section>
     );

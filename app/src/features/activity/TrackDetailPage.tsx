@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactElement } from "react";
-import { useParams, Link } from "react-router-dom";
-import { fetchActivityFileById, updateActivityFileMetadata, type ActivityFile } from "./activity.service";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { deleteActivityFile, fetchActivityFileById, updateActivityFileMetadata, type ActivityFile } from "./activity.service";
 import { TimeSeriesChart } from "./TimeSeriesChart";
 import { TrackCanvasView } from "./TrackCanvasView";
 import { Card } from "../../shared/components/Card";
@@ -10,6 +10,7 @@ import { formatDate, formatDistance, formatDuration, formatElevation, formatHear
 
 export const TrackDetailPage = (): ReactElement => {
     const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
     const [file, setFile] = useState<ActivityFile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -17,6 +18,7 @@ export const TrackDetailPage = (): ReactElement => {
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [tags, setTags] = useState("");
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         if (!id) return;
@@ -40,6 +42,20 @@ export const TrackDetailPage = (): ReactElement => {
             setIsEditing(false);
         } catch (err) {
             alert(err instanceof Error ? err.message : "Failed to update metadata");
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!id || !file) return;
+        const label = file.name || file.filename;
+        if (!window.confirm(`Delete "${label}"? This cannot be undone.`)) return;
+        setIsDeleting(true);
+        try {
+            await deleteActivityFile(id);
+            navigate("/tracks", { replace: true });
+        } catch (err) {
+            setIsDeleting(false);
+            alert(err instanceof Error ? err.message : "Failed to delete training");
         }
     };
 
@@ -82,9 +98,19 @@ export const TrackDetailPage = (): ReactElement => {
                                 </button>
                             </>
                         ) : (
-                            <button type="button" className="btn btn-sm" onClick={() => setIsEditing(true)}>
-                                Edit
-                            </button>
+                            <>
+                                <button type="button" className="btn btn-sm" onClick={() => setIsEditing(true)}>
+                                    Edit
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-danger"
+                                    onClick={handleDelete}
+                                    disabled={isDeleting}
+                                >
+                                    {isDeleting ? "Deleting…" : "Delete"}
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>
