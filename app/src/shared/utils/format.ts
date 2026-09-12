@@ -22,6 +22,23 @@ export const formatHeartRate = (bpm?: number): string => {
     return `${bpm.toFixed(0)} bpm`;
 };
 
+export const formatPace = (secondsPerKm?: number): string => {
+    if (secondsPerKm === undefined || secondsPerKm <= 0 || !Number.isFinite(secondsPerKm)) return "—";
+    const minutes = Math.floor(secondsPerKm / 60);
+    const seconds = Math.round(secondsPerKm % 60);
+    return `${minutes}:${String(seconds).padStart(2, "0")} /km`;
+};
+
+export const formatTime = (seconds?: number): string => {
+    if (seconds === undefined || seconds <= 0) return "—";
+    const totalSeconds = Math.round(seconds);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    if (hours > 0) return `${hours}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    return `${minutes}:${String(secs).padStart(2, "0")}`;
+};
+
 export const formatDate = (value?: string): string => {
     if (value === undefined || value === "") return "—";
     const date = new Date(value);

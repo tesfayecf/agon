@@ -763,6 +763,363 @@ h4 {
 }
 
 /* ---------------------------------------------------------------- */
+/* Trend charts                                                      */
+/* ---------------------------------------------------------------- */
+
+.trend-chart {
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.75rem;
+    overflow-x: auto;
+}
+
+.chart-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.88rem;
+    background: var(--surface-muted);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-md);
+}
+
+/* ---------------------------------------------------------------- */
+/* Goals                                                             */
+/* ---------------------------------------------------------------- */
+
+.goal-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.9rem;
+}
+
+.goal-list__item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.8rem 0.9rem;
+    background: var(--surface-muted);
+}
+
+.goal-list__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.goal-list__period {
+    font-size: 0.72rem;
+    color: var(--muted);
+}
+
+.goal-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.4rem;
+}
+
+.goal-progress__bar {
+    flex: 1;
+    height: 0.55rem;
+    border-radius: 999px;
+    background: var(--border);
+    overflow: hidden;
+}
+
+.goal-progress__fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width 200ms ease;
+}
+
+.goal-progress__label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--ink-secondary);
+    min-width: 3ch;
+    text-align: right;
+}
+
+.goal-list__stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+}
+
+.goal-list__actions {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.goal-form {
+    display: grid;
+    gap: 0.6rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-muted);
+}
+
+.goal-form__actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* ---------------------------------------------------------------- */
+/* Trainings search & filter bar                                     */
+/* ---------------------------------------------------------------- */
+
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+    margin-bottom: 0.9rem;
+}
+
+.filter-bar__search {
+    flex: 1 1 220px;
+    min-width: 180px;
+    height: 2.4rem;
+    padding: 0 0.8rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--ink);
+}
+
+.filter-bar__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.filter-bar__field label {
+    font-size: 0.7rem;
+    font-weight: 650;
+    color: var(--muted);
+}
+
+.filter-bar__field input {
+    height: 2.2rem;
+    padding: 0 0.6rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--ink);
+    width: 9.5rem;
+}
+
+.filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: 1px solid var(--border-strong);
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    border-radius: 999px;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.filter-result-count {
+    margin: 0 0 0.75rem;
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+
+/* ---------------------------------------------------------------- */
+/* Week agenda                                                       */
+/* ---------------------------------------------------------------- */
+
+.view-toggle {
+    display: inline-flex;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.view-toggle .btn {
+    border: none;
+    border-radius: 0;
+}
+
+.view-toggle .btn.is-active {
+    background: var(--accent);
+    color: #fff;
+}
+
+.week-agenda {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.week-agenda__day {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: var(--surface);
+    min-height: 220px;
+}
+
+.week-agenda__day--today {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.week-agenda__day-header {
+    display: flex;
+    flex-direction: column;
+}
+
+.week-agenda__weekday {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+}
+
+.week-agenda__date {
+    font-size: 0.9rem;
+    font-weight: 650;
+}
+
+.week-agenda__entries {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.week-agenda__entry {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface-muted);
+    text-align: left;
+    cursor: default;
+    position: relative;
+}
+
+button.week-agenda__entry--completed {
+    cursor: pointer;
+    border: 1px solid transparent;
+    font: inherit;
+    width: 100%;
+}
+
+.week-agenda__entry-body strong {
+    display: block;
+    font-size: 0.84rem;
+}
+
+.week-agenda__entry-body small {
+    color: var(--muted);
+    font-size: 0.74rem;
+}
+
+.week-agenda__empty {
+    color: var(--muted);
+    font-size: 0.78rem;
+    margin: 0;
+}
+
+.week-agenda__remove {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.3rem;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
+}
+
+.week-agenda__add {
+    align-self: flex-start;
+}
+
+.week-agenda__form {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.week-agenda__form select,
+.week-agenda__form input {
+    height: 2rem;
+    padding: 0 0.5rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 0.82rem;
+}
+
+.week-agenda__form-actions {
+    display: flex;
+    gap: 0.4rem;
+}
+
+/* ---------------------------------------------------------------- */
+/* Weekly schedule editor                                            */
+/* ---------------------------------------------------------------- */
+
+.schedule-editor {
+    display: grid;
+    gap: 0.6rem;
+}
+
+.schedule-editor__row {
+    display: grid;
+    grid-template-columns: 7rem 9rem 1fr 6rem;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+.schedule-editor__day {
+    font-weight: 650;
+    font-size: 0.88rem;
+}
+
+.schedule-editor__row select,
+.schedule-editor__row input {
+    height: 2.2rem;
+    padding: 0 0.6rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--ink);
+}
+
+/* ---------------------------------------------------------------- */
 /* Responsive                                                        */
 /* ---------------------------------------------------------------- */
 
@@ -826,5 +1183,17 @@ h4 {
     .record-list__stats {
         gap: 0.75rem;
         font-size: 0.8rem;
+    }
+
+    .week-agenda {
+        grid-template-columns: 1fr;
+    }
+
+    .schedule-editor__row {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-bar__field input {
+        width: 100%;
     }
 }

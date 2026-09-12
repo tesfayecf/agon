@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import type { ActivityFile } from "../activity/activity.service";
-import { addMonths, formatMonthLabel, getMonthMatrix, groupActivitiesByDate, toDateKey } from "./calendar.utils";
+import {
+    addMonths,
+    addWeeks,
+    formatMonthLabel,
+    formatWeekRangeLabel,
+    getMonthMatrix,
+    getWeekStart,
+    groupActivitiesByDate,
+    toDateKey,
+} from "./calendar.utils";
 
 const makeFile = (id: string, activityDate?: string): ActivityFile => ({
     id,
@@ -65,5 +74,36 @@ describe("groupActivitiesByDate", () => {
         const files = [makeFile("a", undefined), makeFile("b", ""), makeFile("c", "not-a-date")];
         const grouped = groupActivitiesByDate(files);
         expect(grouped.size).toBe(0);
+    });
+});
+
+describe("getWeekStart", () => {
+    it("returns the Monday on/before the given date", () => {
+        // Saturday 2026-09-12 -> Monday 2026-09-07
+        expect(toDateKey(getWeekStart(new Date(2026, 8, 12)))).toBe("2026-09-07");
+    });
+
+    it("returns the same date when it is already a Monday", () => {
+        expect(toDateKey(getWeekStart(new Date(2026, 8, 7)))).toBe("2026-09-07");
+    });
+
+    it("handles Sunday as the last day of the week", () => {
+        expect(toDateKey(getWeekStart(new Date(2026, 8, 13)))).toBe("2026-09-07");
+    });
+});
+
+describe("addWeeks", () => {
+    it("shifts a date forward and backward by whole weeks", () => {
+        const base = new Date(2026, 8, 7);
+        expect(toDateKey(addWeeks(base, 1))).toBe("2026-09-14");
+        expect(toDateKey(addWeeks(base, -1))).toBe("2026-08-31");
+    });
+});
+
+describe("formatWeekRangeLabel", () => {
+    it("renders a human readable week range", () => {
+        const label = formatWeekRangeLabel(new Date(2026, 8, 7));
+        expect(label).toContain("2026");
+        expect(label).toContain("–");
     });
 });

@@ -6,6 +6,7 @@ const NAV_ITEMS = [
     { to: "/", label: "Dashboard", end: true, icon: "▦" },
     { to: "/calendar", label: "Calendar", end: false, icon: "▤" },
     { to: "/tracks", label: "Trainings", end: false, icon: "≣" },
+    { to: "/schedule", label: "Schedule", end: false, icon: "◫" },
     { to: "/settings", label: "Settings", end: false, icon: "⚙" },
 ];
 

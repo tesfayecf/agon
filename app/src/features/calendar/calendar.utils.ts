@@ -69,3 +69,23 @@ export const addMonths = (year: number, month: number, delta: number): { year: n
     const date = new Date(year, month + delta, 1);
     return { year: date.getFullYear(), month: date.getMonth() };
 };
+
+/** Returns the Monday on/before the given date, as a local Date at midnight. */
+export const getWeekStart = (date: Date): Date => {
+    const offset = mondayFirstIndex(date);
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate() - offset);
+    return start;
+};
+
+export const addWeeks = (date: Date, delta: number): Date => {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + delta * 7);
+};
+
+/** Formats a Monday-starting week as "3–9 Mar 2026" (or "30 Mar – 5 Apr 2026" across months). */
+export const formatWeekRangeLabel = (weekStart: Date): string => {
+    const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
+    const sameMonth = weekStart.getMonth() === weekEnd.getMonth() && weekStart.getFullYear() === weekEnd.getFullYear();
+    const startLabel = weekStart.toLocaleDateString(undefined, { day: "numeric", month: sameMonth ? undefined : "short" });
+    const endLabel = weekEnd.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+    return `${startLabel} – ${endLabel}`;
+};

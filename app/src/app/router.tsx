@@ -5,6 +5,7 @@ import { TracksPage } from "../features/activity/TracksPage";
 import { TrackDetailPage } from "../features/activity/TrackDetailPage";
 import { CalendarPage } from "../features/calendar/CalendarPage";
 import { DashboardPage } from "../features/dashboard/DashboardPage";
+import { SchedulePage } from "../features/schedule/SchedulePage";
 import { SettingsPage } from "../features/settings/SettingsPage";
 import { AppRouteError } from "./AppRouteError";
 import { AppShell } from "./AppShell";
@@ -31,6 +32,10 @@ export const router = createBrowserRouter([
             {
                 path: "tracks/:id",
                 element: <TrackDetailPage />,
+            },
+            {
+                path: "schedule",
+                element: <SchedulePage />,
             },
             {
                 path: "settings",

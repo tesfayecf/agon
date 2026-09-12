@@ -12,6 +12,7 @@ import (
 
 	"example.com/app-template/server/internal/activities"
 	"example.com/app-template/server/internal/config"
+	"example.com/app-template/server/internal/planning"
 	"example.com/app-template/server/internal/sqlite"
 	"example.com/app-template/server/internal/storage"
 )
@@ -24,6 +25,7 @@ func NewServer(cfg config.Config, logger *slog.Logger) *http.Server {
 		db, err = sqlite.Open(context.Background(), sqlite.Config{Path: cfg.Database.Path})
 		if err == nil && db != nil {
 			_ = activities.EnsureTable(context.Background(), db)
+			_ = planning.EnsureTables(context.Background(), db)
 		}
 	}
 
@@ -35,6 +37,8 @@ func NewServer(cfg config.Config, logger *slog.Logger) *http.Server {
 	mux := http.NewServeMux()
 	registerHealthRoutes(mux)
 	registerActivityRoutes(mux, db, store)
+	registerAnalyticsRoutes(mux, db)
+	registerPlanningRoutes(mux, db)
 
 	return &http.Server{
 		Addr:              cfg.HTTP.Address,
@@ -83,25 +87,50 @@ func registerActivityRoutes(mux *http.ServeMux, db *sql.DB, store storage.Storag
 			avgHR = hrSum / float64(hrCount)
 		}
 
+		now := time.Now()
+		currentWeekDistance, currentWeekSessions := activities.CurrentWeekDistance(records, now)
+		currentMonthDistance, currentMonthSessions := activities.CurrentMonthDistance(records, now)
+
+		var goals []GoalWithProgress
+		if db != nil {
+			if storedGoals, err := planning.ListGoals(r.Context(), db); err == nil {
+				for _, g := range storedGoals {
+					if g.Active {
+						goals = append(goals, withProgress(g, records, now))
+					}
+				}
+			}
+		}
+
 		WriteJSON(w, http.StatusOK, map[string]any{
-			"totalDistance":    totalDistance,
-			"totalElevation":   totalElevation,
-			"totalDuration":    totalDuration,
-			"trainingCount":    len(records),
-			"avgHeartRate":     avgHR,
-			"recentActivities": records,
+			"totalDistance":        totalDistance,
+			"totalElevation":       totalElevation,
+			"totalDuration":        totalDuration,
+			"trainingCount":        len(records),
+			"avgHeartRate":         avgHR,
+			"recentActivities":     records,
+			"currentWeekDistance":  currentWeekDistance,
+			"currentWeekSessions":  currentWeekSessions,
+			"currentMonthDistance": currentMonthDistance,
+			"currentMonthSessions": currentMonthSessions,
+			"weeklyTrend":          activities.WeeklyTrend(records, 8, now),
+			"monthlyTrend":         activities.MonthlyTrend(records, 6, now),
+			"paceTrend":            activities.PaceTrend(records, 8, now),
+			"heartRateTrend":       activities.HeartRateTrend(records, 8, now),
+			"personalBests":        activities.PersonalBests(records),
+			"goals":                goals,
 		})
 	})
 
-
-	// List uploaded files from DB
+	// List uploaded files from DB, with optional search/filter query params.
 	mux.HandleFunc("GET /api/activities", func(w http.ResponseWriter, r *http.Request) {
 		records, err := activities.ListFileRecords(r.Context(), db)
 		if err != nil {
 			WriteError(w, http.StatusInternalServerError, fmt.Sprintf("failed to list files: %v", err))
 			return
 		}
-		WriteJSON(w, http.StatusOK, map[string]any{"files": records})
+		filtered := filterActivityRecords(records, r.URL.Query())
+		WriteJSON(w, http.StatusOK, map[string]any{"files": filtered, "count": len(filtered)})
 	})
 
 	// Get specific file content / parsed details from S3 & DB
@@ -187,8 +216,6 @@ func registerActivityRoutes(mux *http.ServeMux, db *sql.DB, store storage.Storag
 		}
 		WriteJSON(w, http.StatusOK, rec)
 	})
-
-
 
 	// Upload files to S3 and save metadata to DB
 	mux.HandleFunc("POST /api/activities/upload", func(w http.ResponseWriter, r *http.Request) {
@@ -276,4 +303,3 @@ func registerActivityRoutes(mux *http.ServeMux, db *sql.DB, store storage.Storag
 		WriteJSON(w, statusCode, map[string]any{"files": results})
 	})
 }
-
