@@ -13,8 +13,7 @@ export const createGoal = async (input: { type: GoalType; targetMeters: number }
     return apiRequest({
         method: "POST",
         path: "/api/goals",
-        body: JSON.stringify(input),
-        headers: { "Content-Type": "application/json" },
+        body: input,
     });
 };
 
@@ -25,8 +24,7 @@ export const updateGoal = async (
     return apiRequest({
         method: "PUT",
         path: `/api/goals/${encodeURIComponent(id)}`,
-        body: JSON.stringify(input),
-        headers: { "Content-Type": "application/json" },
+        body: input,
     });
 };
 

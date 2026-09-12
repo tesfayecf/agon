@@ -214,7 +214,7 @@ export const DashboardPage = (): ReactElement => {
 
                         <div>
                             <Card title="Goals" link={{ to: "/calendar", label: "Plan the week" }}>
-                                <GoalsPanel goals={stats.goals} onChanged={load} />
+                                <GoalsPanel goals={stats.goals ?? []} onChanged={load} />
                             </Card>
 
                             {weekPlan !== null && (weekPlan.plannedDistanceMeters > 0 || weekPlan.completedDistanceMeters > 0) && (

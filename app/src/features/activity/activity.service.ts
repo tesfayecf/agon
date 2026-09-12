@@ -40,10 +40,7 @@ export const updateActivityFileMetadata = async (
     return apiRequest<ActivityFile>({
         method: "PUT",
         path: `/api/activities/${encodeURIComponent(id)}`,
-        body: JSON.stringify(metadata),
-        headers: {
-            "Content-Type": "application/json",
-        },
+        body: metadata,
     });
 };
 

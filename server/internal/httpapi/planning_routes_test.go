@@ -116,6 +116,21 @@ func TestScheduleTemplateRoundTrip(t *testing.T) {
 	}
 }
 
+func TestDashboardGoalsFieldIsNeverNullWithNoGoals(t *testing.T) {
+	t.Parallel()
+	server := newTestServer(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/dashboard", nil)
+	resp := httptest.NewRecorder()
+	server.Handler.ServeHTTP(resp, req)
+	if resp.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", resp.Code, resp.Body.String())
+	}
+	if strings.Contains(resp.Body.String(), `"goals":null`) {
+		t.Fatalf("expected an empty array, not null, for goals with none defined: %s", resp.Body.String())
+	}
+}
+
 func TestCalendarWeekNeverReturnsNullArraysForEmptyDays(t *testing.T) {
 	t.Parallel()
 	server := newTestServer(t)

@@ -56,8 +56,7 @@ export const saveTemplate = async (days: ScheduleSlot[]): Promise<{ days: Schedu
     return apiRequest({
         method: "PUT",
         path: "/api/schedule/template",
-        body: JSON.stringify({ days }),
-        headers: { "Content-Type": "application/json" },
+        body: { days },
     });
 };
 
@@ -71,8 +70,7 @@ export const createPlannedSession = async (
     return apiRequest({
         method: "POST",
         path: "/api/schedule/planned",
-        body: JSON.stringify(input),
-        headers: { "Content-Type": "application/json" },
+        body: input,
     });
 };
 

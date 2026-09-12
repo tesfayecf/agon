@@ -91,7 +91,7 @@ func registerActivityRoutes(mux *http.ServeMux, db *sql.DB, store storage.Storag
 		currentWeekDistance, currentWeekSessions := activities.CurrentWeekDistance(records, now)
 		currentMonthDistance, currentMonthSessions := activities.CurrentMonthDistance(records, now)
 
-		var goals []GoalWithProgress
+		goals := []GoalWithProgress{}
 		if db != nil {
 			if storedGoals, err := planning.ListGoals(r.Context(), db); err == nil {
 				for _, g := range storedGoals {
