@@ -324,4 +324,33 @@ func TestListAndGetActivitiesEndpoints(t *testing.T) {
 	if respGet.Code != http.StatusOK || !strings.Contains(respGet.Body.String(), "51.5") {
 		t.Fatalf("expected get response to contain trackpoint lat 51.5, got %d: %s", respGet.Code, respGet.Body.String())
 	}
+
+	// Update metadata via PUT /api/activities/{id}
+	updateBody := `{"name":"Updated Run Name","description":"Lovely morning run","tags":"running,morning"}`
+	reqUpdate := httptest.NewRequest(http.MethodPut, "/api/activities/"+fileID, strings.NewReader(updateBody))
+	reqUpdate.Header.Set("Content-Type", "application/json")
+	respUpdate := httptest.NewRecorder()
+	server.Handler.ServeHTTP(respUpdate, reqUpdate)
+
+	if respUpdate.Code != http.StatusOK {
+		t.Fatalf("expected PUT metadata status 200, got %d with body %s", respUpdate.Code, respUpdate.Body.String())
+	}
+
+	// Get specific file content again to check updated metadata
+	reqGetUpdated := httptest.NewRequest(http.MethodGet, "/api/activities/"+fileID, nil)
+	respGetUpdated := httptest.NewRecorder()
+	server.Handler.ServeHTTP(respGetUpdated, reqGetUpdated)
+
+	if respGetUpdated.Code != http.StatusOK || !strings.Contains(respGetUpdated.Body.String(), "Updated Run Name") {
+		t.Fatalf("expected updated get response to contain 'Updated Run Name', got: %s", respGetUpdated.Body.String())
+	}
+
+	// Fetch dashboard stats via GET /api/dashboard
+	reqDash := httptest.NewRequest(http.MethodGet, "/api/dashboard", nil)
+	respDash := httptest.NewRecorder()
+	server.Handler.ServeHTTP(respDash, reqDash)
+
+	if respDash.Code != http.StatusOK || !strings.Contains(respDash.Body.String(), "totalDistance") || !strings.Contains(respDash.Body.String(), "trainingCount") {
+		t.Fatalf("expected valid dashboard response, got %d: %s", respDash.Code, respDash.Body.String())
+	}
 }

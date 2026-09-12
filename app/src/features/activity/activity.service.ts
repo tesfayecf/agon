@@ -24,7 +24,42 @@ export interface ActivityFile {
     s3Key?: string;
     fileSize?: number;
     createdAt?: string;
+    name?: string;
+    description?: string;
+    tags?: string;
+    elevationGain?: number;
+    avgHeartRate?: number;
 }
+
+// ... existing code ...
+
+export const updateActivityFileMetadata = async (
+    id: string,
+    metadata: { name: string; description: string; tags: string },
+): Promise<ActivityFile> => {
+    return apiRequest<ActivityFile>({
+        method: "PUT",
+        path: `/api/activities/${encodeURIComponent(id)}`,
+        body: JSON.stringify(metadata),
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+};
+
+export const fetchDashboardStats = async (): Promise<{
+    totalDistance: number;
+    totalElevation: number;
+    totalDuration: number;
+    trainingCount: number;
+    avgHeartRate: number;
+    recentActivities: ActivityFile[];
+}> => {
+    return apiRequest({
+        method: "GET",
+        path: "/api/dashboard",
+    });
+};
 
 export interface ActivityListPayload {
     files: ActivityFile[];

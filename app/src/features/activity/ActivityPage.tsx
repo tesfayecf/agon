@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type ReactElement } from "react";
 
-import { fetchActivityFiles, uploadActivityFiles, type ActivityFile } from "./activity.service";
+import { fetchActivityFiles, uploadActivityFiles, updateActivityFileMetadata, type ActivityFile } from "./activity.service";
 import { TimeSeriesChart } from "./TimeSeriesChart";
 import { TrackCanvasView } from "./TrackCanvasView";
 
@@ -12,6 +12,12 @@ export const ActivityPage = (): ReactElement => {
     const [isUploading, setIsUploading] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Edit state
+    const [isEditing, setIsEditing] = useState(false);
+    const [editName, setEditName] = useState("");
+    const [editDesc, setEditDesc] = useState("");
+    const [editTags, setEditTags] = useState("");
 
     useEffect(() => {
         let mounted = true;
@@ -36,7 +42,30 @@ export const ActivityPage = (): ReactElement => {
         };
     }, []);
 
-    const selectedFile = useMemo(() => files.find((file) => file.id === selectedId) ?? files[0] ?? null, [files, selectedId]);
+    const selectedFile = useMemo(() => files.find((file) => file.id === selectedId) ?? null, [files, selectedId]);
+
+    const handleEditStart = () => {
+        if (!selectedFile) return;
+        setEditName(selectedFile.name ?? selectedFile.filename);
+        setEditDesc(selectedFile.description ?? "");
+        setEditTags(selectedFile.tags ?? "");
+        setIsEditing(true);
+    };
+
+    const handleEditSave = async () => {
+        if (!selectedId) return;
+        try {
+            const updated = await updateActivityFileMetadata(selectedId, {
+                name: editName,
+                description: editDesc,
+                tags: editTags,
+            });
+            setFiles((prev) => prev.map((f) => (f.id === selectedId ? updated : f)));
+            setIsEditing(false);
+        } catch (e) {
+            alert("Failed to update metadata");
+        }
+    };
 
     const handleUpload = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
         const nextFiles = event.target.files;

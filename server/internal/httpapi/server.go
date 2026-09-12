@@ -57,6 +57,43 @@ func registerHealthRoutes(mux *http.ServeMux) {
 }
 
 func registerActivityRoutes(mux *http.ServeMux, db *sql.DB, store storage.Storage) {
+	// Dashboard overview stats
+	mux.HandleFunc("GET /api/dashboard", func(w http.ResponseWriter, r *http.Request) {
+		records, err := activities.ListFileRecords(r.Context(), db)
+		if err != nil {
+			WriteError(w, http.StatusInternalServerError, fmt.Sprintf("failed to list records: %v", err))
+			return
+		}
+
+		var totalDistance, totalElevation, totalDuration, hrSum float64
+		var hrCount int
+		for _, rec := range records {
+			if rec.Status == "success" {
+				totalDistance += rec.DistanceMeters
+				totalElevation += rec.ElevationGain
+				totalDuration += rec.DurationSeconds
+				if rec.AvgHeartRate > 0 {
+					hrSum += rec.AvgHeartRate
+					hrCount++
+				}
+			}
+		}
+		var avgHR float64
+		if hrCount > 0 {
+			avgHR = hrSum / float64(hrCount)
+		}
+
+		WriteJSON(w, http.StatusOK, map[string]any{
+			"totalDistance":    totalDistance,
+			"totalElevation":   totalElevation,
+			"totalDuration":    totalDuration,
+			"trainingCount":    len(records),
+			"avgHeartRate":     avgHR,
+			"recentActivities": records,
+		})
+	})
+
+
 	// List uploaded files from DB
 	mux.HandleFunc("GET /api/activities", func(w http.ResponseWriter, r *http.Request) {
 		records, err := activities.ListFileRecords(r.Context(), db)
@@ -95,18 +132,63 @@ func registerActivityRoutes(mux *http.ServeMux, db *sql.DB, store storage.Storag
 		parsed, parseErr := activities.ParseUploadFile(rec.Filename, payload)
 		if parseErr != nil {
 			parsed = activities.ActivityFile{
-				ID:       rec.ID,
-				Filename: rec.Filename,
-				FileType: rec.FileType,
-				Status:   "error",
-				Error:    parseErr.Error(),
+				ID:          rec.ID,
+				Filename:    rec.Filename,
+				FileType:    rec.FileType,
+				Status:      "error",
+				Error:       parseErr.Error(),
+				Name:        rec.Name,
+				Description: rec.Description,
+				Tags:        rec.Tags,
 			}
 		} else {
 			parsed.ID = rec.ID
 		}
 
+		parsed.Name = rec.Name
+		parsed.Description = rec.Description
+		parsed.Tags = rec.Tags
+		if rec.ElevationGain > 0 {
+			parsed.ElevationGain = rec.ElevationGain
+		}
+		if rec.AvgHeartRate > 0 {
+			parsed.AvgHeartRate = rec.AvgHeartRate
+		}
+
 		WriteJSON(w, http.StatusOK, parsed)
 	})
+	// Update training metadata
+	mux.HandleFunc("PUT /api/activities/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			WriteError(w, http.StatusBadRequest, "missing file id")
+			return
+		}
+		var req struct {
+			Name        string `json:"name"`
+			Description string `json:"description"`
+			Tags        string `json:"tags"`
+		}
+		if !DecodeJSON(w, r, &req) {
+			return
+		}
+		if db == nil {
+			WriteError(w, http.StatusInternalServerError, "database not available")
+			return
+		}
+		if err := activities.UpdateFileRecordMetadata(r.Context(), db, id, req.Name, req.Description, req.Tags); err != nil {
+			WriteError(w, http.StatusNotFound, err.Error())
+			return
+		}
+		rec, err := activities.GetFileRecord(r.Context(), db, id)
+		if err != nil {
+			WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		WriteJSON(w, http.StatusOK, rec)
+	})
+
+
 
 	// Upload files to S3 and save metadata to DB
 	mux.HandleFunc("POST /api/activities/upload", func(w http.ResponseWriter, r *http.Request) {
@@ -173,6 +255,11 @@ func registerActivityRoutes(mux *http.ServeMux, db *sql.DB, store storage.Storag
 				Status:          parsed.Status,
 				Error:           parsed.Error,
 				CreatedAt:       time.Now().UTC().Format(time.RFC3339),
+				Name:            parsed.Name,
+				Description:     parsed.Description,
+				Tags:            parsed.Tags,
+				ElevationGain:   parsed.ElevationGain,
+				AvgHeartRate:    parsed.AvgHeartRate,
 			}
 
 			if db != nil {

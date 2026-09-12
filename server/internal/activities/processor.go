@@ -32,6 +32,11 @@ type ActivityFile struct {
 	Records         []ActivityRecord `json:"records"`
 	Status          string           `json:"status"`
 	Error           string           `json:"error,omitempty"`
+	Name            string           `json:"name"`
+	Description     string           `json:"description"`
+	Tags            string           `json:"tags"`
+	ElevationGain   float64          `json:"elevationGain"`
+	AvgHeartRate    float64          `json:"avgHeartRate"`
 }
 
 type ActivityUploadResponse struct {
@@ -96,9 +101,7 @@ func parseFITFile(filename string, payload []byte) (ActivityFile, error) {
 			}
 		}
 	}
-	if result.RecordCount == 0 {
-		result.RecordCount = len(result.Records)
-	}
+	finalizeActivityFile(&result, filename)
 	return result, nil
 }
 
@@ -190,11 +193,46 @@ func parseTCXFile(filename string, payload []byte) (ActivityFile, error) {
 		}
 	}
 
-	result.RecordCount = len(result.Records)
-	if result.ActivityDate == "" && len(result.Records) > 0 {
-		result.ActivityDate = result.Records[0].Timestamp
-	}
+	finalizeActivityFile(&result, filename)
 	return result, nil
+}
+
+func finalizeActivityFile(result *ActivityFile, filename string) {
+	var elevationGain float64
+	var hrSum float64
+	var hrCount int
+	var prevAlt *float64
+	for _, rec := range result.Records {
+		if rec.Altitude != nil {
+			if prevAlt != nil && *rec.Altitude > *prevAlt {
+				elevationGain += *rec.Altitude - *prevAlt
+			}
+			altCopy := *rec.Altitude
+			prevAlt = &altCopy
+		}
+		if rec.HeartRate != nil {
+			hrSum += *rec.HeartRate
+			hrCount++
+		}
+	}
+	result.ElevationGain = elevationGain
+	if hrCount > 0 {
+		result.AvgHeartRate = hrSum / float64(hrCount)
+	}
+	if result.Name == "" {
+		base := filename
+		if idx := strings.LastIndex(base, "."); idx != -1 {
+			base = base[:idx]
+		}
+		base = strings.ReplaceAll(base, "_", " ")
+		base = strings.ReplaceAll(base, "-", " ")
+		if len(base) > 0 {
+			result.Name = strings.ToUpper(base[:1]) + base[1:]
+		} else {
+			result.Name = filename
+		}
+	}
+	result.RecordCount = len(result.Records)
 }
 
 func fitRecordToActivityRecord(record fit.RecordMsg) ActivityRecord {
