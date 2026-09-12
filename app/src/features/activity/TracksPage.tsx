@@ -1,6 +1,10 @@
 import { useEffect, useState, type ReactElement } from "react";
 import { Link } from "react-router-dom";
-import { fetchActivityFiles, uploadActivityFiles, type ActivityFile } from "../activity/activity.service";
+import { fetchActivityFiles, uploadActivityFiles, type ActivityFile } from "./activity.service";
+import { PageHeader } from "../../shared/components/PageHeader";
+import { Card } from "../../shared/components/Card";
+import { LoadingState, EmptyState, ErrorState } from "../../shared/components/StateViews";
+import { formatDistance, formatDuration, formatElevation } from "../../shared/utils/format";
 
 export const TracksPage = (): ReactElement => {
     const [files, setFiles] = useState<ActivityFile[]>([]);
@@ -12,7 +16,7 @@ export const TracksPage = (): ReactElement => {
         setIsLoading(true);
         fetchActivityFiles()
             .then((res) => setFiles(res.files || []))
-            .catch(() => {})
+            .catch((err) => setError(err instanceof Error ? err.message : "Could not load trainings."))
             .finally(() => setIsLoading(false));
     };
 
@@ -37,51 +41,58 @@ export const TracksPage = (): ReactElement => {
     };
 
     return (
-        <section className="upload-grid" aria-live="polite">
-            <article className="upload-panel" style={{ gridColumn: "span 12" }}>
-                <div className="panel__header">
-                    <div>
-                        <p className="eyebrow">Workouts</p>
-                        <h2>Training Tracks</h2>
-                    </div>
-                    <label className="button-link button-link--primary" style={{ cursor: "pointer", padding: "0.5rem 1rem", fontSize: "0.9rem" }}>
-                        <span>{isUploading ? "Uploading..." : "+ Upload Track"}</span>
-                        <input type="file" multiple accept=".fit,.tcx" onChange={handleUpload} style={{ display: "none" }} />
+        <section aria-live="polite">
+            <PageHeader
+                eyebrow="Library"
+                title="Trainings"
+                subtitle="All uploaded training sessions, most recent first."
+                actions={
+                    <label className="btn btn-primary file-input-btn">
+                        <span>{isUploading ? "Uploading…" : "+ Upload Track"}</span>
+                        <input type="file" multiple accept=".fit,.tcx" onChange={handleUpload} disabled={isUploading} />
                     </label>
-                </div>
-                {error && <div className="error-banner">{error}</div>}
-            </article>
+                }
+            />
 
-            <article className="upload-list" style={{ gridColumn: "span 12", marginTop: "1rem" }}>
-                <div className="panel__header">
-                    <div>
-                        <p className="eyebrow">Library</p>
-                        <h3>All Uploaded Trainings</h3>
-                    </div>
-                </div>
+            {error !== null && <ErrorState message={error} />}
 
-                {isLoading && <p className="panel__copy">Loading trainings…</p>}
-                {!isLoading && files.length === 0 && <p className="panel__copy">No trainings uploaded yet. Click "+ Upload Track" above.</p>}
+            <Card>
+                {isLoading && <LoadingState label="Loading trainings…" />}
+                {!isLoading && files.length === 0 && (
+                    <EmptyState
+                        title="No trainings uploaded yet"
+                        message='Click "+ Upload Track" above to add your first FIT or TCX file.'
+                    />
+                )}
                 {!isLoading && files.length > 0 && (
-                    <ul className="file-list">
+                    <ul className="record-list">
                         {files.map((file) => (
                             <li key={file.id}>
-                                <Link to={`/tracks/${file.id}`} className="file-list__item" style={{ textDecoration: "none" }}>
-                                    <div className="file-meta">
+                                <Link to={`/tracks/${file.id}`} className="record-list__item">
+                                    <div className="record-list__meta">
                                         <strong>{file.name || file.filename}</strong>
-                                        <small>{file.activityDate ? new Date(file.activityDate).toLocaleString() : file.filename} {file.tags ? `· Tagged: ${file.tags}` : ""}</small>
+                                        <small>
+                                            {file.activityDate ? new Date(file.activityDate).toLocaleString() : file.filename}
+                                            {file.tags ? ` · ${file.tags}` : ""}
+                                        </small>
                                     </div>
-                                    <div style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
-                                        {file.distanceMeters !== undefined && <strong>{(file.distanceMeters / 1000).toFixed(2)} km</strong>}
-                                        {file.elevationGain !== undefined && file.elevationGain > 0 && <span style={{ color: "var(--muted)" }}>↑ {file.elevationGain.toFixed(0)} m</span>}
-                                        {file.durationSeconds !== undefined && <span style={{ color: "var(--muted)" }}>{Math.floor(file.durationSeconds / 60)} min</span>}
+                                    <div className="record-list__stats">
+                                        {file.distanceMeters !== undefined && file.distanceMeters > 0 && (
+                                            <strong>{formatDistance(file.distanceMeters)}</strong>
+                                        )}
+                                        {file.elevationGain !== undefined && file.elevationGain > 0 && (
+                                            <span>↑ {formatElevation(file.elevationGain)}</span>
+                                        )}
+                                        {file.durationSeconds !== undefined && file.durationSeconds > 0 && (
+                                            <span>{formatDuration(file.durationSeconds)}</span>
+                                        )}
                                     </div>
                                 </Link>
                             </li>
                         ))}
                     </ul>
                 )}
-            </article>
+            </Card>
         </section>
     );
 };

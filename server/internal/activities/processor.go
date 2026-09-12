@@ -77,8 +77,9 @@ func parseFITFile(filename string, payload []byte) (ActivityFile, error) {
 	if len(activity.Sessions) > 0 {
 		session := activity.Sessions[0]
 		result.ActivityDate = formatOptionalTime(session.StartTime)
-		result.DurationSeconds = float64(session.TotalElapsedTime)
-		result.DistanceMeters = float64(session.TotalDistance)
+		// FIT profile scale factors: total_elapsed_time is stored *1000 (seconds), total_distance *100 (meters).
+		result.DurationSeconds = float64(session.TotalElapsedTime) / 1000
+		result.DistanceMeters = float64(session.TotalDistance) / 100
 	}
 
 	if len(activity.Records) > 0 {

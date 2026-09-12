@@ -3,6 +3,11 @@ import { useEffect, useMemo, useState, type ChangeEvent, type ReactElement } fro
 import { fetchActivityFiles, uploadActivityFiles, updateActivityFileMetadata, type ActivityFile } from "./activity.service";
 import { TimeSeriesChart } from "./TimeSeriesChart";
 import { TrackCanvasView } from "./TrackCanvasView";
+import { PageHeader } from "../../shared/components/PageHeader";
+import { Card } from "../../shared/components/Card";
+import { MetricCard } from "../../shared/components/MetricCard";
+import { LoadingState, EmptyState, ErrorState } from "../../shared/components/StateViews";
+import { formatDistance, formatDuration } from "../../shared/utils/format";
 
 const emptyList: ActivityFile[] = [];
 
@@ -12,12 +17,6 @@ export const ActivityPage = (): ReactElement => {
     const [isUploading, setIsUploading] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    // Edit state
-    const [isEditing, setIsEditing] = useState(false);
-    const [editName, setEditName] = useState("");
-    const [editDesc, setEditDesc] = useState("");
-    const [editTags, setEditTags] = useState("");
 
     useEffect(() => {
         let mounted = true;
@@ -43,29 +42,6 @@ export const ActivityPage = (): ReactElement => {
     }, []);
 
     const selectedFile = useMemo(() => files.find((file) => file.id === selectedId) ?? null, [files, selectedId]);
-
-    const handleEditStart = () => {
-        if (!selectedFile) return;
-        setEditName(selectedFile.name ?? selectedFile.filename);
-        setEditDesc(selectedFile.description ?? "");
-        setEditTags(selectedFile.tags ?? "");
-        setIsEditing(true);
-    };
-
-    const handleEditSave = async () => {
-        if (!selectedId) return;
-        try {
-            const updated = await updateActivityFileMetadata(selectedId, {
-                name: editName,
-                description: editDesc,
-                tags: editTags,
-            });
-            setFiles((prev) => prev.map((f) => (f.id === selectedId ? updated : f)));
-            setIsEditing(false);
-        } catch (e) {
-            alert("Failed to update metadata");
-        }
-    };
 
     const handleUpload = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
         const nextFiles = event.target.files;
@@ -101,147 +77,109 @@ export const ActivityPage = (): ReactElement => {
     };
 
     return (
-        <section className="upload-grid" aria-live="polite">
-            <article className="upload-panel">
-                <div className="panel__header">
-                    <div>
-                        <p className="eyebrow">Activity ingestion</p>
-                        <h2>Upload FIT or TCX files</h2>
-                    </div>
-                    <span className={`status-pill ${isUploading ? "status-pill--pending" : "status-pill--ready"}`}>
-                        {isUploading ? "Processing" : "Ready"}
-                    </span>
-                </div>
-
-                <p className="panel__copy">
-                    Select one or more activity files to inspect their parsed data on the server.
-                </p>
-
-                <div className="upload-actions">
-                    <label className="file-input">
-                        <input type="file" accept=".fit,.tcx" multiple onChange={handleUpload} />
+        <section aria-live="polite">
+            <PageHeader
+                eyebrow="Activity ingestion"
+                title="Upload FIT or TCX files"
+                subtitle="Select one or more activity files to inspect their parsed data."
+                actions={
+                    <label className="btn btn-primary file-input-btn">
                         <span>{isUploading ? "Uploading…" : "Choose files"}</span>
+                        <input type="file" accept=".fit,.tcx" multiple onChange={handleUpload} disabled={isUploading} />
                     </label>
-                </div>
+                }
+            />
 
-                {error !== null && <div className="error-banner">{error}</div>}
-            </article>
+            {error !== null && <ErrorState message={error} />}
 
-            <article className="upload-list">
-                <div className="panel__header">
-                    <div>
-                        <p className="eyebrow">Files</p>
-                        <h2>Uploaded activities</h2>
-                    </div>
-                </div>
+            <div className="card-grid" style={{ gridTemplateColumns: "minmax(240px, 1fr) minmax(0, 2.2fr)" }}>
+                <Card title="Files">
+                    {isLoading && <LoadingState label="Loading files…" />}
+                    {!isLoading && files.length === 0 && <EmptyState title="No files uploaded yet" />}
+                    {!isLoading && files.length > 0 && (
+                        <ul className="record-list">
+                            {files.map((file) => (
+                                <li key={file.id}>
+                                    <button
+                                        type="button"
+                                        className={`record-list__item ${selectedFile?.id === file.id ? "is-selected" : ""}`}
+                                        onClick={() => setSelectedId(file.id)}
+                                        style={{ width: "100%", border: "1px solid var(--border)" }}
+                                    >
+                                        <span className="record-list__meta">
+                                            <strong>{file.filename}</strong>
+                                            <small>{file.fileType} · {file.recordCount} records</small>
+                                        </span>
+                                        <span className={`badge ${file.status === "success" ? "badge--success" : "badge--danger"}`}>
+                                            {file.status === "success" ? "Parsed" : "Error"}
+                                        </span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </Card>
 
-                {isLoading && <p className="panel__copy">Loading files from database…</p>}
+                <Card title={selectedFile ? selectedFile.filename : "No file selected"}>
+                    {selectedFile === null && <EmptyState title="Nothing selected" message="Upload or select a file to inspect its data." />}
 
-                {!isLoading && files.length === 0 && <p className="panel__copy">No files uploaded yet.</p>}
+                    {selectedFile !== null && selectedFile.status === "error" && (
+                        <ErrorState message={selectedFile.error ?? "This file could not be processed."} />
+                    )}
 
-                {!isLoading && files.length > 0 && (
-                    <ul className="file-list">
-                        {files.map((file) => (
-                            <li key={file.id}>
-                                <button
-                                    type="button"
-                                    className={`file-list__item ${selectedFile?.id === file.id ? "is-selected" : ""}`}
-                                    onClick={() => setSelectedId(file.id)}
-                                >
-                                    <span className="file-meta">
-                                        <strong>{file.filename}</strong>
-                                        <small>
-                                            {file.fileType} · {file.recordCount} records
-                                        </small>
-                                    </span>
-                                    <span className={`status-pill ${file.status === "success" ? "status-pill--ready" : "status-pill--offline"}`}>
-                                        {file.status === "success" ? "Parsed" : "Error"}
-                                    </span>
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </article>
-
-            <article className="upload-detail">
-                <div className="panel__header">
-                    <div>
-                        <p className="eyebrow">Detail & Visualization</p>
-                        <h2>{selectedFile ? selectedFile.filename : "No activity selected"}</h2>
-                    </div>
-                </div>
-
-                {selectedFile === null && <p className="panel__copy">Upload or select a FIT or TCX file to inspect its data and track visualizations.</p>}
-
-                {selectedFile !== null && selectedFile.status === "error" && (
-                    <p className="error-banner">{selectedFile.error ?? "This file could not be processed."}</p>
-                )}
-
-                {selectedFile !== null && selectedFile.status === "success" && (
-                    <>
-                        <div className="metric-grid">
-                            <article>
-                                <span>Activity date</span>
-                                <strong>{selectedFile.activityDate || "Unavailable"}</strong>
-                            </article>
-                            <article>
-                                <span>Duration</span>
-                                <strong>{selectedFile.durationSeconds ? `${selectedFile.durationSeconds.toFixed(1)} s` : "Unavailable"}</strong>
-                            </article>
-                            <article>
-                                <span>Distance</span>
-                                <strong>{selectedFile.distanceMeters ? `${selectedFile.distanceMeters.toFixed(1)} m` : "Unavailable"}</strong>
-                            </article>
-                            <article>
-                                <span>Records</span>
-                                <strong>{selectedFile.recordCount}</strong>
-                            </article>
-                        </div>
-
-                        {selectedFile.records && selectedFile.records.length > 0 && (
-                            <>
-                                <TimeSeriesChart records={selectedFile.records} />
-                                <TrackCanvasView records={selectedFile.records} />
-                            </>
-                        )}
-
-                        {(!selectedFile.records || selectedFile.records.length === 0) && (
-                            <p className="panel__copy" style={{ marginTop: "1rem" }}>This file parsed but did not contain activity records.</p>
-                        )}
-
-                        {selectedFile.records && selectedFile.records.length > 0 && (
-                            <div style={{ overflowX: "auto", marginTop: "1rem" }}>
-                                <h3>Sample Records</h3>
-                                <table className="record-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Timestamp</th>
-                                            <th>Latitude</th>
-                                            <th>Longitude</th>
-                                            <th>Distance</th>
-                                            <th>Speed</th>
-                                            <th>Heart rate</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {selectedFile.records.slice(0, 12).map((record, index) => (
-                                            <tr key={`${selectedFile.id}-${index}`}>
-                                                <td>{record.timestamp ?? "—"}</td>
-                                                <td>{record.latitude !== undefined ? record.latitude.toFixed(5) : "—"}</td>
-                                                <td>{record.longitude !== undefined ? record.longitude.toFixed(5) : "—"}</td>
-                                                <td>{record.distance !== undefined ? `${record.distance.toFixed(1)} m` : "—"}</td>
-                                                <td>{record.speed !== undefined ? `${record.speed.toFixed(2)} m/s` : "—"}</td>
-                                                <td>{record.heartRate !== undefined ? `${record.heartRate.toFixed(0)} bpm` : "—"}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                    {selectedFile !== null && selectedFile.status === "success" && (
+                        <>
+                            <div className="metric-grid">
+                                <MetricCard label="Activity date" value={selectedFile.activityDate ?? "Unavailable"} isAvailable={Boolean(selectedFile.activityDate)} />
+                                <MetricCard label="Duration" value={formatDuration(selectedFile.durationSeconds)} isAvailable={(selectedFile.durationSeconds ?? 0) > 0} />
+                                <MetricCard label="Distance" value={formatDistance(selectedFile.distanceMeters)} isAvailable={(selectedFile.distanceMeters ?? 0) > 0} />
+                                <MetricCard label="Records" value={String(selectedFile.recordCount)} />
                             </div>
-                        )}
-                    </>
-                )}
-            </article>
+
+                            {selectedFile.records && selectedFile.records.length > 0 && (
+                                <>
+                                    <TimeSeriesChart records={selectedFile.records} />
+                                    <TrackCanvasView records={selectedFile.records} />
+                                </>
+                            )}
+
+                            {(!selectedFile.records || selectedFile.records.length === 0) && (
+                                <p style={{ marginTop: "1rem", color: "var(--muted)" }}>This file parsed but did not contain activity records.</p>
+                            )}
+
+                            {selectedFile.records && selectedFile.records.length > 0 && (
+                                <div style={{ overflowX: "auto", marginTop: "1rem" }}>
+                                    <h3>Sample Records</h3>
+                                    <table className="record-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Timestamp</th>
+                                                <th>Latitude</th>
+                                                <th>Longitude</th>
+                                                <th>Distance</th>
+                                                <th>Speed</th>
+                                                <th>Heart rate</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {selectedFile.records.slice(0, 12).map((record, index) => (
+                                                <tr key={`${selectedFile.id}-${index}`}>
+                                                    <td>{record.timestamp ?? "—"}</td>
+                                                    <td>{record.latitude !== undefined ? record.latitude.toFixed(5) : "—"}</td>
+                                                    <td>{record.longitude !== undefined ? record.longitude.toFixed(5) : "—"}</td>
+                                                    <td>{record.distance !== undefined ? `${record.distance.toFixed(1)} m` : "—"}</td>
+                                                    <td>{record.speed !== undefined ? `${record.speed.toFixed(2)} m/s` : "—"}</td>
+                                                    <td>{record.heartRate !== undefined ? `${record.heartRate.toFixed(0)} bpm` : "—"}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </Card>
+            </div>
         </section>
     );
 };
