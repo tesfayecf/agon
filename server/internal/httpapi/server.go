@@ -117,6 +117,7 @@ func registerActivityRoutes(mux *http.ServeMux, db *sql.DB, store storage.Storag
 			"monthlyTrend":         activities.MonthlyTrend(records, 6, now),
 			"paceTrend":            activities.PaceTrend(records, 8, now),
 			"heartRateTrend":       activities.HeartRateTrend(records, 8, now),
+			"paceHeartRatePoints":  activities.PaceHeartRateSeries(records),
 			"personalBests":        activities.PersonalBests(records),
 			"goals":                goals,
 		})

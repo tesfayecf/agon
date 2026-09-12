@@ -115,6 +115,29 @@ func TestPersonalBestsOnlyAcceptsQualifyingDistances(t *testing.T) {
 	}
 }
 
+func TestPaceHeartRateSeriesOrdersChronologicallyAndFiltersUnreliableData(t *testing.T) {
+	t.Parallel()
+
+	records := []FileRecord{
+		{ID: "a", Name: "Later run", Status: "success", ActivityDate: "2026-02-01T08:00:00Z", DistanceMeters: 5000, DurationSeconds: 1500, AvgHeartRate: 150},
+		{ID: "b", Name: "Earlier run", Status: "success", ActivityDate: "2026-01-01T08:00:00Z", DistanceMeters: 10000, DurationSeconds: 3000, AvgHeartRate: 140},
+		{ID: "c", Name: "No heart rate", Status: "success", ActivityDate: "2026-01-15T08:00:00Z", DistanceMeters: 5000, DurationSeconds: 1500, AvgHeartRate: 0},
+		{ID: "d", Name: "Too short", Status: "success", ActivityDate: "2026-01-20T08:00:00Z", DistanceMeters: 200, DurationSeconds: 60, AvgHeartRate: 130},
+		{ID: "e", Name: "Failed upload", Status: "error", ActivityDate: "2026-01-25T08:00:00Z", DistanceMeters: 5000, DurationSeconds: 1500, AvgHeartRate: 145},
+	}
+
+	points := PaceHeartRateSeries(records)
+	if len(points) != 2 {
+		t.Fatalf("expected 2 qualifying points, got %d: %+v", len(points), points)
+	}
+	if points[0].ActivityID != "b" || points[1].ActivityID != "a" {
+		t.Fatalf("expected chronological order b, a; got %s, %s", points[0].ActivityID, points[1].ActivityID)
+	}
+	if points[0].PaceSecPerKm != 300 {
+		t.Fatalf("expected pace 300 sec/km for a 10km/3000s run, got %v", points[0].PaceSecPerKm)
+	}
+}
+
 func TestCurrentWeekAndMonthDistance(t *testing.T) {
 	t.Parallel()
 

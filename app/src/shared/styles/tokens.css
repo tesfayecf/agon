@@ -1,0 +1,144 @@
+/* ------------------------------------------------------------------ */
+/* Design tokens                                                       */
+/*                                                                      */
+/* Single source of truth for color, spacing, radius and elevation.     */
+/* Components must reference these variables rather than hardcoding    */
+/* colors, so the whole app (including hand-rolled SVG charts) adapts  */
+/* automatically to dark mode and stays easy to re-theme.              */
+/*                                                                      */
+/* Theme resolution order (first match wins):                          */
+/*   1. Explicit choice  -> [data-theme="dark"] / [data-theme="light"] */
+/*   2. No explicit choice ("system") -> prefers-color-scheme           */
+/*   3. Light tokens on bare :root (fallback)                          */
+/* ------------------------------------------------------------------ */
+
+:root {
+    color-scheme: light;
+    font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    /* Neutral surface scale */
+    --bg: #f4f5f7;
+    --surface: #ffffff;
+    --surface-muted: #f8f9fb;
+    --surface-raised: #ffffff;
+    --border: #e3e6ea;
+    --border-strong: #cbd0d7;
+
+    /* Text */
+    --ink: #1a1f24;
+    --ink-secondary: #4b5561;
+    --muted: #737d89;
+
+    /* Brand accent (single accent, used sparingly) */
+    --accent: #0f6b5c;
+    --accent-strong: #0a4a40;
+    --accent-soft: #e6f2f0;
+
+    /* Semantic */
+    --success: #15803d;
+    --success-soft: #e9f7ef;
+    --warning: #b45309;
+    --warning-soft: #fdf2e2;
+    --danger: #b91c1c;
+    --danger-soft: #fbe9e9;
+
+    /* Chart palette — used by every chart so series stay visually consistent
+       and theme-aware; add new series here rather than inlining hex values. */
+    --chart-1: #0f6b5c;
+    --chart-2: #2563eb;
+    --chart-3: #dc2626;
+    --chart-4: #d97706;
+    --chart-5: #7c3aed;
+    --chart-grid: var(--border);
+    --chart-axis-text: var(--muted);
+    --chart-surface: var(--surface-muted);
+
+    /* Elevation */
+    --shadow-sm: 0 1px 2px rgba(20, 24, 29, 0.06);
+    --shadow-md: 0 4px 16px rgba(20, 24, 29, 0.08);
+
+    /* Radius scale */
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+
+    /* Spacing scale */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        color-scheme: dark;
+
+        --bg: #14171a;
+        --surface: #1c2024;
+        --surface-muted: #22262b;
+        --surface-raised: #262b30;
+        --border: #33393f;
+        --border-strong: #454c53;
+
+        --ink: #edf0f2;
+        --ink-secondary: #b7bfc6;
+        --muted: #838e97;
+
+        --accent: #2fae98;
+        --accent-strong: #6fd6c2;
+        --accent-soft: rgba(47, 174, 152, 0.16);
+
+        --success: #4ade80;
+        --success-soft: rgba(74, 222, 128, 0.14);
+        --warning: #fbbf24;
+        --warning-soft: rgba(251, 191, 36, 0.14);
+        --danger: #f87171;
+        --danger-soft: rgba(248, 113, 113, 0.14);
+
+        --chart-1: #2fae98;
+        --chart-2: #60a5fa;
+        --chart-3: #f87171;
+        --chart-4: #fbbf24;
+        --chart-5: #a78bfa;
+
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+    }
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --bg: #14171a;
+    --surface: #1c2024;
+    --surface-muted: #22262b;
+    --surface-raised: #262b30;
+    --border: #33393f;
+    --border-strong: #454c53;
+
+    --ink: #edf0f2;
+    --ink-secondary: #b7bfc6;
+    --muted: #838e97;
+
+    --accent: #2fae98;
+    --accent-strong: #6fd6c2;
+    --accent-soft: rgba(47, 174, 152, 0.16);
+
+    --success: #4ade80;
+    --success-soft: rgba(74, 222, 128, 0.14);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.14);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.14);
+
+    --chart-1: #2fae98;
+    --chart-2: #60a5fa;
+    --chart-3: #f87171;
+    --chart-4: #fbbf24;
+    --chart-5: #a78bfa;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+}

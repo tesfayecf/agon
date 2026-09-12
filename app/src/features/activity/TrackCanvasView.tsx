@@ -1,12 +1,21 @@
 import { useEffect, useRef, type ReactElement } from "react";
 import type { ActivityRecord } from "./activity.service";
+import { useTheme } from "../../shared/theme/ThemeContext";
 
 interface TrackCanvasViewProps {
     records: ActivityRecord[];
 }
 
+/** Canvas 2D drawing doesn't go through the CSS cascade, so var(--x) references must be
+ * resolved to their computed value before being handed to ctx.fillStyle/strokeStyle. */
+const resolveCssVar = (name: string): string => {
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value === "" ? "#64748b" : value;
+};
+
 export const TrackCanvasView = ({ records }: TrackCanvasViewProps): ReactElement => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const { theme } = useTheme();
 
     const validPoints = records.filter(
         (r): r is ActivityRecord & { latitude: number; longitude: number } =>
@@ -28,9 +37,16 @@ export const TrackCanvasView = ({ records }: TrackCanvasViewProps): ReactElement
         const height = canvas.height;
         ctx.clearRect(0, 0, width, height);
 
+        const mutedColor = resolveCssVar("--muted");
+        const gridColor = resolveCssVar("--chart-grid");
+        const borderStrongColor = resolveCssVar("--border-strong");
+        const pathColor = resolveCssVar("--chart-2");
+        const startColor = resolveCssVar("--success");
+        const endColor = resolveCssVar("--danger");
+
         const firstValid = validPoints[0];
         if (firstValid === undefined) {
-            ctx.fillStyle = "#64748b";
+            ctx.fillStyle = mutedColor;
             ctx.font = "14px system-ui, sans-serif";
             ctx.textAlign = "center";
             ctx.fillText("No GPS coordinate data available for track view.", width / 2, height / 2);
@@ -81,7 +97,7 @@ export const TrackCanvasView = ({ records }: TrackCanvasViewProps): ReactElement
         });
 
         // Grid lines
-        ctx.strokeStyle = "#e2e8f0";
+        ctx.strokeStyle = gridColor;
         ctx.lineWidth = 1;
         for (let x = 0; x < width; x += 50) {
             ctx.beginPath();
@@ -98,7 +114,7 @@ export const TrackCanvasView = ({ records }: TrackCanvasViewProps): ReactElement
 
         // Relative Origin (0,0) indicator
         const originPx = toPx({ x: 0, y: 0 });
-        ctx.strokeStyle = "#cbd5e1";
+        ctx.strokeStyle = borderStrongColor;
         ctx.setLineDash([4, 4]);
         ctx.beginPath();
         ctx.moveTo(originPx.px, 0);
@@ -108,13 +124,13 @@ export const TrackCanvasView = ({ records }: TrackCanvasViewProps): ReactElement
         ctx.stroke();
         ctx.setLineDash([]);
 
-        ctx.fillStyle = "#64748b";
+        ctx.fillStyle = mutedColor;
         ctx.beginPath();
         ctx.arc(originPx.px, originPx.py, 4, 0, Math.PI * 2);
         ctx.fill();
 
         // Track Path
-        ctx.strokeStyle = "#2563eb";
+        ctx.strokeStyle = pathColor;
         ctx.lineWidth = 3;
         ctx.lineJoin = "round";
         ctx.beginPath();
@@ -131,28 +147,28 @@ export const TrackCanvasView = ({ records }: TrackCanvasViewProps): ReactElement
         }
         ctx.stroke();
 
-        // Start point (green)
-        ctx.fillStyle = "#16a34a";
+        // Start point (success color)
+        ctx.fillStyle = startColor;
         ctx.beginPath();
         ctx.arc(first.px, first.py, 6, 0, Math.PI * 2);
         ctx.fill();
 
-        // End point (red)
+        // End point (danger color)
         const lastRel = relPoints[relPoints.length - 1];
         if (lastRel !== undefined) {
             const last = toPx(lastRel);
-            ctx.fillStyle = "#dc2626";
+            ctx.fillStyle = endColor;
             ctx.beginPath();
             ctx.arc(last.px, last.py, 6, 0, Math.PI * 2);
             ctx.fill();
         }
-    }, [validPoints]);
+    }, [validPoints, theme]);
 
     return (
         <div style={{ margin: "1.5rem 0", textAlign: "center" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
                 <strong>2D Relative Track View</strong>
-                <small style={{ color: "#64748b" }}>
+                <small style={{ color: "var(--muted)" }}>
                     Origin (0,0) @ {validPoints[0] !== undefined ? `${validPoints[0].latitude.toFixed(4)}, ${validPoints[0].longitude.toFixed(4)}` : "N/A"}
                 </small>
             </div>
@@ -164,8 +180,8 @@ export const TrackCanvasView = ({ records }: TrackCanvasViewProps): ReactElement
                     width: "100%",
                     maxWidth: "650px",
                     height: "auto",
-                    backgroundColor: "#f8fafc",
-                    border: "1px solid #e2e8f0",
+                    backgroundColor: "var(--surface-muted)",
+                    border: "1px solid var(--border)",
                     borderRadius: "8px",
                 }}
             />

@@ -1,89 +1,5 @@
-:root {
-    color-scheme: light;
-    font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    line-height: 1.5;
-    font-weight: 400;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-
-    /* Neutral surface scale */
-    --bg: #f4f5f7;
-    --surface: #ffffff;
-    --surface-muted: #f8f9fb;
-    --border: #e3e6ea;
-    --border-strong: #cbd0d7;
-
-    /* Text */
-    --ink: #1a1f24;
-    --ink-secondary: #4b5561;
-    --muted: #737d89;
-
-    /* Brand accent (single accent, used sparingly) */
-    --accent: #0f6b5c;
-    --accent-strong: #0a4a40;
-    --accent-soft: #e6f2f0;
-
-    /* Semantic */
-    --success: #15803d;
-    --success-soft: #e9f7ef;
-    --warning: #b45309;
-    --warning-soft: #fdf2e2;
-    --danger: #b91c1c;
-    --danger-soft: #fbe9e9;
-
-    /* Elevation */
-    --shadow-sm: 0 1px 2px rgba(20, 24, 29, 0.06);
-    --shadow-md: 0 4px 16px rgba(20, 24, 29, 0.08);
-
-    /* Spacing / radius scale */
-    --radius-sm: 0.5rem;
-    --radius-md: 0.75rem;
-    --radius-lg: 1rem;
-}
-
-* {
-    box-sizing: border-box;
-}
-
-html {
-    min-height: 100%;
-    background: var(--bg);
-}
-
-body {
-    margin: 0;
-    min-height: 100vh;
-    color: var(--ink);
-}
-
-a {
-    color: inherit;
-}
-
-button,
-input,
-textarea,
-select {
-    font: inherit;
-}
-
-code {
-    font-family: "SFMono-Regular", "Consolas", monospace;
-}
-
-#root {
-    min-height: 100vh;
-}
-
-h1,
-h2,
-h3,
-h4 {
-    margin: 0;
-    letter-spacing: -0.01em;
-    font-weight: 650;
-}
+@import "./tokens.css";
+@import "./base.css";
 
 /* ---------------------------------------------------------------- */
 /* App shell / navigation                                           */
@@ -760,6 +676,51 @@ h4 {
 
 .calendar-mini__day--today:not(.calendar-mini__day--active) {
     border: 1px solid var(--accent);
+}
+
+/* ---------------------------------------------------------------- */
+/* Settings / theme toggle                                            */
+/* ---------------------------------------------------------------- */
+
+.settings-field__description {
+    margin: 0 0 0.9rem;
+    color: var(--muted);
+    font-size: 0.88rem;
+}
+
+.theme-toggle {
+    display: inline-flex;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.theme-toggle__option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 2.4rem;
+    padding: 0 1rem;
+    border: none;
+    border-right: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--ink-secondary);
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+}
+
+.theme-toggle__option:last-child {
+    border-right: none;
+}
+
+.theme-toggle__option:hover {
+    background: var(--surface-muted);
+}
+
+.theme-toggle__option.is-active {
+    background: var(--accent);
+    color: #fff;
 }
 
 /* ---------------------------------------------------------------- */

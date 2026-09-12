@@ -332,6 +332,62 @@ func PersonalBests(records []FileRecord) []PersonalBest {
 	return bests
 }
 
+// PaceHeartRatePoint pairs the pace and average heart rate of a single completed
+// training, used to visualize fitness progress over time (e.g. a lower heart rate at a
+// similar pace over time suggests improving aerobic fitness).
+type PaceHeartRatePoint struct {
+	Date           string  `json:"date"`
+	PaceSecPerKm   float64 `json:"paceSecondsPerKm"`
+	AvgHeartRate   float64 `json:"avgHeartRate"`
+	DistanceMeters float64 `json:"distanceMeters"`
+	ActivityID     string  `json:"activityId"`
+	ActivityName   string  `json:"activityName"`
+}
+
+// minScatterDistanceMeters avoids plotting very short recordings whose pace/HR values
+// are noisy and not representative of a real training effort.
+const minScatterDistanceMeters = 500
+
+// PaceHeartRateSeries returns one point per completed training that has both a
+// reliable pace (sufficient distance/duration) and recorded average heart rate,
+// ordered chronologically so the caller can visualize the trend over time.
+func PaceHeartRateSeries(records []FileRecord) []PaceHeartRatePoint {
+	type dated struct {
+		point PaceHeartRatePoint
+		when  time.Time
+	}
+	items := make([]dated, 0, len(records))
+	for _, rec := range completedOnly(records) {
+		if rec.DistanceMeters < minScatterDistanceMeters || rec.DurationSeconds <= 0 || rec.AvgHeartRate <= 0 {
+			continue
+		}
+		date, ok := parseActivityDate(rec.ActivityDate)
+		if !ok {
+			continue
+		}
+		km := rec.DistanceMeters / 1000
+		items = append(items, dated{
+			point: PaceHeartRatePoint{
+				Date:           rec.ActivityDate,
+				PaceSecPerKm:   round2(rec.DurationSeconds / km),
+				AvgHeartRate:   round2(rec.AvgHeartRate),
+				DistanceMeters: rec.DistanceMeters,
+				ActivityID:     rec.ID,
+				ActivityName:   rec.Name,
+			},
+			when: date,
+		})
+	}
+
+	sort.Slice(items, func(i, j int) bool { return items[i].when.Before(items[j].when) })
+
+	result := make([]PaceHeartRatePoint, 0, len(items))
+	for _, it := range items {
+		result = append(result, it.point)
+	}
+	return result
+}
+
 // CurrentWeekDistance sums completed training distance within the current Monday-starting week.
 func CurrentWeekDistance(records []FileRecord, now time.Time) (float64, int) {
 	week := mondayStart(now.UTC())

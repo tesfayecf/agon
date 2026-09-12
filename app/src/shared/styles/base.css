@@ -1,0 +1,57 @@
+/* ------------------------------------------------------------------ */
+/* Base reset                                                           */
+/*                                                                      */
+/* Element-level defaults only. Component styles live in global.css     */
+/* (or their own file as the app grows) so this file stays small and    */
+/* easy to reuse in isolation.                                         */
+/* ------------------------------------------------------------------ */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    min-height: 100%;
+    background: var(--bg);
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--ink);
+    line-height: 1.5;
+    font-weight: 400;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--bg);
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+a {
+    color: inherit;
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+code {
+    font-family: "SFMono-Regular", "Consolas", monospace;
+}
+
+#root {
+    min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    margin: 0;
+    letter-spacing: -0.01em;
+    font-weight: 650;
+}

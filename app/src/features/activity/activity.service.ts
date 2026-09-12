@@ -81,6 +81,15 @@ export interface PersonalBest {
     activityName: string;
 }
 
+export interface PaceHeartRatePoint {
+    date: string;
+    paceSecondsPerKm: number;
+    avgHeartRate: number;
+    distanceMeters: number;
+    activityId: string;
+    activityName: string;
+}
+
 export interface GoalWithProgress {
     id: string;
     type: "weekly_distance" | "monthly_distance";
@@ -109,6 +118,7 @@ export interface DashboardStats {
     monthlyTrend: MonthlyTrendPoint[];
     paceTrend: PaceTrendPoint[];
     heartRateTrend: HeartRateTrendPoint[];
+    paceHeartRatePoints: PaceHeartRatePoint[];
     personalBests: PersonalBest[];
     goals: GoalWithProgress[];
 }

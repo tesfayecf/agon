@@ -1,11 +1,19 @@
 import type { ReactElement } from "react";
 import { PageHeader } from "../../shared/components/PageHeader";
 import { Card } from "../../shared/components/Card";
+import { ThemeToggle } from "../../shared/components/ThemeToggle";
 
 export const SettingsPage = (): ReactElement => {
     return (
         <section aria-live="polite">
             <PageHeader eyebrow="Application" title="Settings" subtitle="Customize your running and training preferences." />
+
+            <Card title="Appearance">
+                <p className="settings-field__description">
+                    Choose Light or Dark, or follow your system setting automatically.
+                </p>
+                <ThemeToggle />
+            </Card>
 
             <Card title="Preferences">
                 <p style={{ color: "var(--muted)", margin: 0 }}>

@@ -8,10 +8,10 @@ interface TimeSeriesChartProps {
 type MetricKey = "speed" | "heartRate" | "altitude" | "distance";
 
 const metricConfig: Record<MetricKey, { label: string; unit: string; color: string }> = {
-    speed: { label: "Speed", unit: "m/s", color: "#2563eb" },
-    heartRate: { label: "Heart Rate", unit: "bpm", color: "#dc2626" },
-    altitude: { label: "Altitude", unit: "m", color: "#16a34a" },
-    distance: { label: "Distance", unit: "m", color: "#d97706" },
+    speed: { label: "Speed", unit: "m/s", color: "var(--chart-2)" },
+    heartRate: { label: "Heart Rate", unit: "bpm", color: "var(--chart-3)" },
+    altitude: { label: "Altitude", unit: "m", color: "var(--chart-1)" },
+    distance: { label: "Distance", unit: "m", color: "var(--chart-4)" },
 };
 
 export const TimeSeriesChart = ({ records }: TimeSeriesChartProps): ReactElement => {
@@ -27,8 +27,8 @@ export const TimeSeriesChart = ({ records }: TimeSeriesChartProps): ReactElement
 
     if (availableMetrics.length === 0) {
         return (
-            <div style={{ margin: "1.5rem 0", textAlign: "center", padding: "2rem", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
-                <p style={{ color: "#64748b", margin: 0 }}>No numerical time series metrics available in this file.</p>
+            <div style={{ margin: "1.5rem 0", textAlign: "center", padding: "2rem", background: "var(--surface-muted)", borderRadius: "8px", border: "1px solid var(--border)" }}>
+                <p style={{ color: "var(--muted)", margin: 0 }}>No numerical time series metrics available in this file.</p>
             </div>
         );
     }
@@ -72,9 +72,9 @@ export const TimeSeriesChart = ({ records }: TimeSeriesChartProps): ReactElement
                                 padding: "0.3rem 0.6rem",
                                 fontSize: "0.82rem",
                                 borderRadius: "6px",
-                                border: `1px solid ${currentMetric === key ? metricConfig[key].color : "#cbd5e1"}`,
-                                background: currentMetric === key ? metricConfig[key].color : "#ffffff",
-                                color: currentMetric === key ? "#ffffff" : "#334155",
+                                border: `1px solid ${currentMetric === key ? metricConfig[key].color : "var(--border-strong)"}`,
+                                background: currentMetric === key ? metricConfig[key].color : "var(--surface)",
+                                color: currentMetric === key ? "#ffffff" : "var(--ink-secondary)",
                                 cursor: "pointer",
                             }}
                         >
@@ -84,15 +84,15 @@ export const TimeSeriesChart = ({ records }: TimeSeriesChartProps): ReactElement
                 </div>
             </div>
 
-            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "1rem" }}>
+            <div style={{ background: "var(--surface-muted)", border: "1px solid var(--border)", borderRadius: "8px", padding: "1rem" }}>
                 <svg viewBox={`0 0 ${width} ${height}`} style={{ width: "100%", height: "auto", display: "block" }}>
                     {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
                         const y = padY + chartH * ratio;
                         const val = maxVal - ratio * range;
                         return (
                             <g key={idx}>
-                                <line x1={padX} y1={y} x2={width - padX} y2={y} stroke="#e2e8f0" strokeDasharray="3 3" />
-                                <text x={padX - 8} y={y + 4} fontSize="10" fill="#64748b" textAnchor="end">
+                                <line x1={padX} y1={y} x2={width - padX} y2={y} stroke="var(--chart-grid)" strokeDasharray="3 3" />
+                                <text x={padX - 8} y={y + 4} fontSize="10" fill="var(--chart-axis-text)" textAnchor="end">
                                     {val.toFixed(1)}
                                 </text>
                             </g>
@@ -114,7 +114,7 @@ export const TimeSeriesChart = ({ records }: TimeSeriesChartProps): ReactElement
                         <circle key={idx} cx={pt.x} cy={pt.y} r={points.length < 50 ? 3.5 : 1.5} fill={cfg.color} />
                     ))}
                 </svg>
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.5rem", fontSize: "0.8rem", color: "#64748b" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.5rem", fontSize: "0.8rem", color: "var(--muted)" }}>
                     <span>Start: {validData[0]?.timestamp ?? "N/A"}</span>
                     <span>Unit: {cfg.unit}</span>
                     <span>End: {validData[validData.length - 1]?.timestamp ?? "N/A"}</span>

@@ -59,6 +59,17 @@ func registerAnalyticsRoutes(mux *http.ServeMux, db *sql.DB) {
 		})
 	})
 
+	mux.HandleFunc("GET /api/analytics/pace-heartrate", func(w http.ResponseWriter, r *http.Request) {
+		records, err := activities.ListFileRecords(r.Context(), db)
+		if err != nil {
+			WriteError(w, http.StatusInternalServerError, fmt.Sprintf("failed to list records: %v", err))
+			return
+		}
+		WriteJSON(w, http.StatusOK, map[string]any{
+			"points": activities.PaceHeartRateSeries(records),
+		})
+	})
+
 	mux.HandleFunc("GET /api/analytics/personal-bests", func(w http.ResponseWriter, r *http.Request) {
 		records, err := activities.ListFileRecords(r.Context(), db)
 		if err != nil {

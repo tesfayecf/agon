@@ -7,6 +7,18 @@
     <meta name="description" content="Opinionated React frontend starter for Go-backed products." />
     <link rel="manifest" href="/manifest.json" />
     <title>App Template</title>
+    <script>
+        (function () {
+            try {
+                var stored = window.localStorage.getItem("agon-theme");
+                if (stored === "light" || stored === "dark") {
+                    document.documentElement.setAttribute("data-theme", stored);
+                }
+            } catch (e) {
+                /* localStorage unavailable; fall back to the system theme. */
+            }
+        })();
+    </script>
 </head>
 <body>
     <div id="root"></div>

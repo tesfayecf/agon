@@ -12,6 +12,7 @@ import { formatDistance, formatDuration, formatPace, formatTime } from "../../sh
 import { GoalsPanel } from "../goals/GoalsPanel";
 import { BarTrendChart } from "./charts/BarTrendChart";
 import { LineTrendChart } from "./charts/LineTrendChart";
+import { ScatterTrendChart } from "./charts/ScatterTrendChart";
 import { toDateKey } from "../calendar/calendar.utils";
 
 const weekLabel = (weekStart: string): string => {
@@ -128,7 +129,7 @@ export const DashboardPage = (): ReactElement => {
                                     }))}
                                     valueFormatter={(v) => `${v} km`}
                                     emptyMessage="Not enough training data yet to show a monthly trend."
-                                    color="var(--accent-strong)"
+                                    color="var(--chart-4)"
                                 />
                             </Card>
 
@@ -142,7 +143,7 @@ export const DashboardPage = (): ReactElement => {
                                         }))}
                                         valueFormatter={(v) => formatPace(v)}
                                         emptyMessage="No reliable pace data available yet."
-                                        color="#2563eb"
+                                        color="var(--chart-2)"
                                     />
                                 </Card>
 
@@ -155,10 +156,29 @@ export const DashboardPage = (): ReactElement => {
                                         }))}
                                         valueFormatter={(v) => `${v.toFixed(0)} bpm`}
                                         emptyMessage="No heart-rate data recorded yet."
-                                        color="#dc2626"
+                                        color="var(--chart-3)"
                                     />
                                 </Card>
                             </div>
+
+                            <Card title="Fitness progress" eyebrow="Pace vs. heart rate, per training">
+                                <p className="settings-field__description">
+                                    Each point is one training. A lower heart rate at a similar (or faster) pace over
+                                    time suggests improving aerobic fitness.
+                                </p>
+                                <ScatterTrendChart
+                                    points={stats.paceHeartRatePoints.map((p) => ({
+                                        x: p.paceSecondsPerKm,
+                                        y: p.avgHeartRate,
+                                        tooltip: `${p.activityName || "Training"} · ${new Date(p.date).toLocaleDateString()} · ${formatPace(p.paceSecondsPerKm)} · ${p.avgHeartRate.toFixed(0)} bpm`,
+                                    }))}
+                                    xFormatter={(v) => formatPace(v)}
+                                    yFormatter={(v) => `${v.toFixed(0)} bpm`}
+                                    xLabel="Pace"
+                                    yLabel="Heart rate"
+                                    emptyMessage="Not enough trainings with both pace and heart-rate data yet."
+                                />
+                            </Card>
 
                             <Card title="Personal bests">
                                 {stats.personalBests.length === 0 && (
