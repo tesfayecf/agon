@@ -27,17 +27,27 @@
     /* Text */
     --ink: #1a1f24;
     --ink-secondary: #4b5561;
-    --muted: #737d89;
+    /* #5b6572 rather than a lighter gray: WCAG AA needs >=4.5:1 for normal text,
+       and this is the darkest "muted" tone that still reads as de-emphasized
+       (contrast ~5.9:1 on --surface, ~5.6:1 on --surface-muted). */
+    --muted: #5b6572;
 
     /* Brand accent (single accent, used sparingly) */
     --accent: #0f6b5c;
     --accent-strong: #0a4a40;
     --accent-soft: #e6f2f0;
+    /* Foreground for text/icons drawn on a solid --accent fill (buttons, active
+       toggle states). Light mode's accent is dark enough for white; dark mode's
+       brighter accent needs a dark foreground instead (white on it is ~2.75:1). */
+    --accent-ink: #ffffff;
 
-    /* Semantic */
-    --success: #15803d;
+    /* Semantic. success/warning are deliberately a shade darker than the more
+       common "friendly" green/amber — those looked fine alone but landed at a
+       precarious ~4.53:1 against their own -soft background (any small
+       rendering difference could tip below the 4.5:1 AA minimum). */
+    --success: #0f6b32;
     --success-soft: #e9f7ef;
-    --warning: #b45309;
+    --warning: #9a4508;
     --warning-soft: #fdf2e2;
     --danger: #b91c1c;
     --danger-soft: #fbe9e9;
@@ -96,13 +106,16 @@
         --accent: #2fae98;
         --accent-strong: #6fd6c2;
         --accent-soft: rgba(47, 174, 152, 0.16);
+        --accent-ink: #081815;
 
+        /* 0.10 alpha (not 0.14): danger-on-danger-soft measured at 4.49:1 at 0.14,
+           just under the 4.5:1 AA minimum; 0.10 gives ~4.75:1 with real margin. */
         --success: #4ade80;
-        --success-soft: rgba(74, 222, 128, 0.14);
+        --success-soft: rgba(74, 222, 128, 0.10);
         --warning: #fbbf24;
-        --warning-soft: rgba(251, 191, 36, 0.14);
+        --warning-soft: rgba(251, 191, 36, 0.10);
         --danger: #f87171;
-        --danger-soft: rgba(248, 113, 113, 0.14);
+        --danger-soft: rgba(248, 113, 113, 0.10);
 
         --chart-1: #2fae98;
         --chart-2: #60a5fa;
@@ -138,13 +151,15 @@
     --accent: #2fae98;
     --accent-strong: #6fd6c2;
     --accent-soft: rgba(47, 174, 152, 0.16);
+    --accent-ink: #081815;
 
+    /* See the media-query block above for why these use 0.10 alpha, not 0.14. */
     --success: #4ade80;
-    --success-soft: rgba(74, 222, 128, 0.14);
+    --success-soft: rgba(74, 222, 128, 0.10);
     --warning: #fbbf24;
-    --warning-soft: rgba(251, 191, 36, 0.14);
+    --warning-soft: rgba(251, 191, 36, 0.10);
     --danger: #f87171;
-    --danger-soft: rgba(248, 113, 113, 0.14);
+    --danger-soft: rgba(248, 113, 113, 0.10);
 
     --chart-1: #2fae98;
     --chart-2: #60a5fa;

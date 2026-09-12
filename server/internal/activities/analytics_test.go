@@ -157,3 +157,117 @@ func TestCurrentWeekAndMonthDistance(t *testing.T) {
 		t.Fatalf("expected month distance 5000/1 session, got %v/%d", monthDistance, monthCount)
 	}
 }
+
+// daysAgo formats an RFC3339 timestamp `n` days before `now`, for building fixture records.
+func daysAgo(now time.Time, n int) string {
+	return now.AddDate(0, 0, -n).Format(time.RFC3339)
+}
+
+func TestComputeTrainingLoadInsufficientDataWhenEmpty(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC)
+
+	load := ComputeTrainingLoad(nil, now)
+	if load.Status != LoadStatusInsufficientData || load.HasEnoughHistory {
+		t.Fatalf("expected insufficient_data with no records, got %+v", load)
+	}
+}
+
+func TestComputeTrainingLoadInsufficientDataWithThinHistory(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC)
+	// Only 3 days of history exist at all — below minHistoryDaysForRatio.
+	records := []FileRecord{
+		{Status: "success", ActivityDate: daysAgo(now, 1), DistanceMeters: 5000},
+		{Status: "success", ActivityDate: daysAgo(now, 3), DistanceMeters: 5000},
+	}
+
+	load := ComputeTrainingLoad(records, now)
+	if load.Status != LoadStatusInsufficientData {
+		t.Fatalf("expected insufficient_data with only 3 days of history, got %+v", load)
+	}
+}
+
+func TestComputeTrainingLoadOptimalWhenSteady(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC)
+	// A steady 10km every other day for the last 28 days: acute and chronic
+	// weekly volumes should match closely, landing in the "optimal" band.
+	records := make([]FileRecord, 0, 14)
+	for d := 1; d <= 28; d += 2 {
+		records = append(records, FileRecord{Status: "success", ActivityDate: daysAgo(now, d), DistanceMeters: 10000})
+	}
+
+	load := ComputeTrainingLoad(records, now)
+	if !load.HasEnoughHistory {
+		t.Fatalf("expected enough history, got %+v", load)
+	}
+	if load.Status != LoadStatusOptimal {
+		t.Fatalf("expected optimal status for steady load, got %+v", load)
+	}
+	if load.Ratio < 0.8 || load.Ratio > 1.3 {
+		t.Fatalf("expected ratio within [0.8, 1.3] for steady load, got %v", load.Ratio)
+	}
+}
+
+func TestComputeTrainingLoadHighWhenRecentSpike(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC)
+	// Light training weeks 2-4 ago, then a big spike in the last 7 days.
+	records := []FileRecord{
+		{Status: "success", ActivityDate: daysAgo(now, 10), DistanceMeters: 5000},
+		{Status: "success", ActivityDate: daysAgo(now, 17), DistanceMeters: 5000},
+		{Status: "success", ActivityDate: daysAgo(now, 24), DistanceMeters: 5000},
+		{Status: "success", ActivityDate: daysAgo(now, 1), DistanceMeters: 20000},
+		{Status: "success", ActivityDate: daysAgo(now, 2), DistanceMeters: 20000},
+		{Status: "success", ActivityDate: daysAgo(now, 3), DistanceMeters: 20000},
+	}
+
+	load := ComputeTrainingLoad(records, now)
+	if load.Status != LoadStatusHigh {
+		t.Fatalf("expected high status for a sharp recent spike, got %+v", load)
+	}
+	if load.Ratio <= 1.5 {
+		t.Fatalf("expected ratio > 1.5 for a sharp spike, got %v", load.Ratio)
+	}
+}
+
+func TestComputeTrainingLoadLowWhenTaperingOff(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC)
+	// Consistent training in weeks 2-4 ago, nothing in the last 7 days.
+	records := []FileRecord{
+		{Status: "success", ActivityDate: daysAgo(now, 10), DistanceMeters: 15000},
+		{Status: "success", ActivityDate: daysAgo(now, 17), DistanceMeters: 15000},
+		{Status: "success", ActivityDate: daysAgo(now, 24), DistanceMeters: 15000},
+	}
+
+	load := ComputeTrainingLoad(records, now)
+	if load.Status != LoadStatusLow {
+		t.Fatalf("expected low status when acute volume drops to zero, got %+v", load)
+	}
+	if load.AcuteDistanceMeters != 0 {
+		t.Fatalf("expected zero acute distance, got %v", load.AcuteDistanceMeters)
+	}
+}
+
+func TestComputeTrainingLoadNormalizesChronicWindowForNewAccounts(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC)
+	// Only 14 days of history exist (first activity 13 days ago), evenly spread,
+	// so the chronic average should be normalized by ~2 weeks, not always by 4 —
+	// otherwise a new account would look artificially "low" simply for being new.
+	records := []FileRecord{
+		{Status: "success", ActivityDate: daysAgo(now, 1), DistanceMeters: 10000},
+		{Status: "success", ActivityDate: daysAgo(now, 3), DistanceMeters: 10000},
+		{Status: "success", ActivityDate: daysAgo(now, 5), DistanceMeters: 10000},
+		{Status: "success", ActivityDate: daysAgo(now, 8), DistanceMeters: 10000},
+		{Status: "success", ActivityDate: daysAgo(now, 10), DistanceMeters: 10000},
+		{Status: "success", ActivityDate: daysAgo(now, 13), DistanceMeters: 10000},
+	}
+
+	load := ComputeTrainingLoad(records, now)
+	if load.Status != LoadStatusOptimal {
+		t.Fatalf("expected optimal status once normalized for a ~2-week-old account, got %+v", load)
+	}
+}

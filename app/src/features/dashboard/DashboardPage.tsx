@@ -6,43 +6,19 @@ import { fetchCalendarWeek } from "../schedule/schedule.service";
 import { CalendarMiniPreview } from "../calendar/CalendarMiniPreview";
 import { PageHeader } from "../../shared/components/PageHeader";
 import { Card } from "../../shared/components/Card";
-import { MetricCard, type MetricTrend } from "../../shared/components/MetricCard";
+import { MetricCard } from "../../shared/components/MetricCard";
 import { LoadingState, EmptyState, ErrorState } from "../../shared/components/StateViews";
 import { formatDistance, formatDuration, formatPace, formatTime } from "../../shared/utils/format";
 import { GoalsPanel } from "../goals/GoalsPanel";
+import { TrainingLoadCard } from "./TrainingLoadCard";
 import { BarTrendChart } from "./charts/BarTrendChart";
 import { LineTrendChart } from "./charts/LineTrendChart";
 import { ScatterTrendChart } from "./charts/ScatterTrendChart";
 import { toDateKey } from "../calendar/calendar.utils";
+import { computeEfficiencyInsight, deltaTrend, EF_NOISE_THRESHOLD_PERCENT, monthLabel, round1, weekLabel } from "./dashboard.utils";
 
 type VolumePeriod = "weekly" | "monthly";
 type EffortMetric = "pace" | "heartRate";
-
-const weekLabel = (weekStart: string): string => {
-    const d = new Date(`${weekStart}T00:00:00`);
-    return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
-};
-
-const monthLabel = (month: string): string => {
-    const parts = month.split("-").map(Number);
-    const year = parts[0] ?? new Date().getFullYear();
-    const m = parts[1] ?? 1;
-    return new Date(year, m - 1, 1).toLocaleDateString(undefined, { month: "short" });
-};
-
-const round1 = (value: number): number => Math.round(value * 10) / 10;
-
-/** Builds a delta pill comparing the current period against the one before it. */
-const deltaTrend = (current: number, previous: number, lowerIsBetter = false): MetricTrend | undefined => {
-    if (previous <= 0) return undefined;
-    const change = ((current - previous) / previous) * 100;
-    if (Math.abs(change) < 1) return { direction: "flat", label: "level vs. previous", lowerIsBetter };
-    return {
-        direction: change > 0 ? "up" : "down",
-        label: `${Math.abs(change).toFixed(0)}% vs. previous`,
-        lowerIsBetter,
-    };
-};
 
 interface WeeklyPlanSummary {
     plannedDistanceMeters: number;
@@ -97,7 +73,8 @@ export const DashboardPage = (): ReactElement => {
         const bestWeek = weekly.reduce((best, w) => (w.distanceMeters > best ? w.distanceMeters : best), 0);
         const avgSession = stats.trainingCount > 0 ? stats.totalDuration / stats.trainingCount : 0;
         const latestEffort = stats.paceHeartRatePoints[stats.paceHeartRatePoints.length - 1];
-        return { previousWeek, previousMonth, activeWeeks, bestWeek, avgSession, latestEffort, weeklyWindow: weekly.length };
+        const efficiencyInsight = computeEfficiencyInsight(stats.paceHeartRatePoints);
+        return { previousWeek, previousMonth, activeWeeks, bestWeek, avgSession, latestEffort, efficiencyInsight, weeklyWindow: weekly.length };
     }, [stats]);
 
     const planProgress = useMemo(() => {
@@ -184,6 +161,10 @@ export const DashboardPage = (): ReactElement => {
                         />
                     </div>
 
+                    <Card title="Training load" eyebrow="Acute (7-day) vs. chronic (28-day) volume" accent="var(--accent)">
+                        <TrainingLoadCard load={stats.trainingLoad} />
+                    </Card>
+
                     <div className="dashboard-grid">
                         <div className="dashboard-grid__main">
                             <Card
@@ -224,6 +205,7 @@ export const DashboardPage = (): ReactElement => {
                                         valueFormatter={(v) => `${v} km`}
                                         emptyMessage="Not enough training data yet to show a weekly trend."
                                         color="var(--chart-1)"
+                                        ariaLabel="Weekly training volume, most recent weeks"
                                     />
                                 ) : (
                                     <BarTrendChart
@@ -236,6 +218,7 @@ export const DashboardPage = (): ReactElement => {
                                         valueFormatter={(v) => `${v} km`}
                                         emptyMessage="Not enough training data yet to show a monthly trend."
                                         color="var(--chart-4)"
+                                        ariaLabel="Monthly training volume, most recent months"
                                     />
                                 )}
                             </Card>
@@ -277,6 +260,7 @@ export const DashboardPage = (): ReactElement => {
                                         valueFormatter={(v) => formatPace(v)}
                                         emptyMessage="No reliable pace data available yet."
                                         color="var(--chart-2)"
+                                        ariaLabel="Weekly average pace trend"
                                     />
                                 ) : (
                                     <LineTrendChart
@@ -288,6 +272,7 @@ export const DashboardPage = (): ReactElement => {
                                         valueFormatter={(v) => `${v.toFixed(0)} bpm`}
                                         emptyMessage="No heart-rate data recorded yet."
                                         color="var(--chart-3)"
+                                        ariaLabel="Weekly average heart-rate trend"
                                     />
                                 )}
                             </Card>
@@ -301,6 +286,15 @@ export const DashboardPage = (): ReactElement => {
                                         <div className="chip-row">
                                             <span className="chip">Latest {formatPace(summary.latestEffort.paceSecondsPerKm)}</span>
                                             <span className="chip">{summary.latestEffort.avgHeartRate.toFixed(0)} bpm</span>
+                                            {summary.efficiencyInsight !== null && Math.abs(summary.efficiencyInsight.changePercent) >= EF_NOISE_THRESHOLD_PERCENT && (
+                                                <span
+                                                    className={`chip chip--${summary.efficiencyInsight.changePercent > 0 ? "positive" : "negative"}`}
+                                                    title="Change in aerobic efficiency (speed per heartbeat) between the earlier and more recent half of these trainings"
+                                                >
+                                                    Efficiency {summary.efficiencyInsight.changePercent > 0 ? "▲" : "▼"}{" "}
+                                                    {Math.abs(summary.efficiencyInsight.changePercent).toFixed(0)}%
+                                                </span>
+                                            )}
                                         </div>
                                     ) : undefined
                                 }

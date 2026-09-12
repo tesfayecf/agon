@@ -35,7 +35,7 @@
     height: 2rem;
     border-radius: var(--radius-sm);
     background: var(--accent);
-    color: #fff;
+    color: var(--accent-ink);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -213,7 +213,7 @@
 .btn-primary {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
+    color: var(--accent-ink);
 }
 
 .btn-primary:hover {
@@ -329,6 +329,10 @@
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
+    /* Padding (not just line-height) so the hit area clears the 24px WCAG 2.2 AA
+       minimum target size without inflating the visible chip. */
+    padding: 0.35rem 0.1rem;
+    margin: -0.35rem -0.1rem;
     font-size: 0.82rem;
     font-weight: 600;
     color: var(--accent);
@@ -700,6 +704,8 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex-wrap: wrap;
+    row-gap: 0.6rem;
 }
 
 .calendar__title {
@@ -742,9 +748,17 @@
     gap: 0.35rem;
 }
 
+/* De-emphasized via background + a muted (but still AA-compliant) number color,
+   not opacity: fading a whole cell's text toward the page background is exactly
+   what breaks color-contrast, since the blended result loses contrast against
+   that same background. */
 .calendar__day--outside {
     background: var(--surface-muted);
-    opacity: 0.55;
+}
+
+.calendar__day--outside .calendar__day-number {
+    color: var(--muted);
+    font-weight: 550;
 }
 
 .calendar__day--today {
@@ -817,12 +831,15 @@
 }
 
 .calendar-mini__day--outside {
-    opacity: 0.35;
+    /* No background fill (vs. a filled --surface-muted cell) is enough visual
+       distinction; fading text via opacity would fail contrast (see the
+       .calendar__day--outside comment above for why). */
+    background: transparent;
 }
 
 .calendar-mini__day--active {
     background: var(--accent);
-    color: #fff;
+    color: var(--accent-ink);
     font-weight: 700;
 }
 
@@ -872,7 +889,7 @@
 
 .theme-toggle__option.is-active {
     background: var(--accent);
-    color: #fff;
+    color: var(--accent-ink);
 }
 
 /* ---------------------------------------------------------------- */
@@ -958,6 +975,18 @@
     white-space: nowrap;
 }
 
+.chip--positive {
+    border-color: transparent;
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.chip--negative {
+    border-color: transparent;
+    background: var(--warning-soft);
+    color: var(--warning);
+}
+
 /* ---------------------------------------------------------------- */
 /* Goals                                                             */
 /* ---------------------------------------------------------------- */
@@ -984,6 +1013,13 @@
 .goal-card--complete {
     border-color: color-mix(in srgb, var(--success) 35%, var(--border));
     background: var(--success-soft);
+}
+
+/* --muted is tuned for AA contrast against the neutral surfaces, not this
+   green-tinted background — in dark mode specifically it drops to ~3.6:1. */
+.goal-card--complete .goal-card__figure span,
+.goal-card--complete .goal-card__meta {
+    color: var(--ink-secondary);
 }
 
 .goal-card__body {
@@ -1198,6 +1234,145 @@
     margin: 0;
     font-size: 0.76rem;
     color: var(--muted);
+}
+
+/* ---------------------------------------------------------------- */
+/* Training load gauge                                                */
+/* ---------------------------------------------------------------- */
+
+.training-load__headline {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    margin: 0 0 var(--space-4);
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--ink-secondary);
+    max-width: 68ch;
+}
+
+.training-load__headline strong {
+    color: var(--ink);
+}
+
+.training-load__dot {
+    flex-shrink: 0;
+    margin-top: 0.4rem;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 999px;
+}
+
+.training-load__dot--low {
+    background: var(--chart-2);
+}
+
+.training-load__dot--optimal {
+    background: var(--success);
+}
+
+.training-load__dot--caution {
+    background: var(--warning);
+}
+
+.training-load__dot--high {
+    background: var(--danger);
+}
+
+.training-load__gauge {
+    position: relative;
+    margin: 2.1rem 0 0.4rem;
+}
+
+.training-load__zones {
+    display: flex;
+    height: 0.7rem;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--surface-muted);
+}
+
+.training-load__zone {
+    transition: opacity 200ms ease;
+}
+
+.training-load__marker {
+    position: absolute;
+    top: -1.9rem;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    transition: left 240ms ease;
+}
+
+.training-load__marker-value {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.training-load__marker-pin {
+    width: 2px;
+    height: 1.5rem;
+    border-radius: 999px;
+}
+
+.training-load__zone-labels {
+    display: flex;
+    margin-bottom: var(--space-4);
+}
+
+.training-load__zone-labels span {
+    font-size: 0.68rem;
+    font-weight: 650;
+    color: var(--muted);
+    text-align: center;
+}
+
+.training-load__zone-labels span:first-child {
+    text-align: left;
+}
+
+.training-load__zone-labels span:last-child {
+    text-align: right;
+}
+
+.training-load__stats {
+    display: flex;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-3);
+}
+
+.training-load__stats > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.training-load__stats strong {
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.training-load__stat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.training-load__caveat {
+    margin: 0;
+    font-size: 0.74rem;
+    line-height: 1.5;
+    color: var(--muted);
+    max-width: 68ch;
 }
 
 /* Personal bests */
@@ -1445,7 +1620,7 @@
 
 .view-toggle .btn.is-active {
     background: var(--accent);
-    color: #fff;
+    color: var(--accent-ink);
 }
 
 .week-agenda {

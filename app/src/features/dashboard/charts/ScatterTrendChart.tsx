@@ -1,5 +1,7 @@
 import type { ReactElement } from "react";
 
+import { useElementWidth } from "../../../shared/hooks/useElementWidth";
+
 export interface ScatterTrendPoint {
     x: number;
     y: number;
@@ -16,13 +18,10 @@ interface ScatterTrendChartProps {
     color?: string;
 }
 
-const VIEW_W = 760;
-const VIEW_H = 280;
-// Wide enough for the y tick labels to clear the rotated axis title on the far left.
-const PAD_LEFT = 82;
-const PAD_RIGHT = 16;
-const PAD_TOP = 18;
-const PAD_BOTTOM = 42;
+const HEIGHT = 260;
+const PAD_RIGHT = 14;
+const PAD_TOP = 16;
+const PAD_BOTTOM = 40;
 
 /**
  * A scatter chart where point opacity increases from oldest (faint) to newest (solid),
@@ -38,6 +37,8 @@ export const ScatterTrendChart = ({
     emptyMessage,
     color = "var(--chart-5)",
 }: ScatterTrendChartProps): ReactElement => {
+    const { ref, width } = useElementWidth<HTMLDivElement>();
+
     if (points.length < 2) {
         return (
             <div className="chart-empty">
@@ -45,6 +46,12 @@ export const ScatterTrendChart = ({
             </div>
         );
     }
+
+    const viewW = Math.max(width, 260);
+    // Narrow viewports drop the rotated y-axis title (kept as an aria-label instead)
+    // and use a tighter left gutter, since there's no room for both a title and ticks.
+    const compact = viewW < 420;
+    const padLeft = compact ? 46 : 82;
 
     const xValues = points.map((p) => p.x);
     const yValues = points.map((p) => p.y);
@@ -59,11 +66,11 @@ export const ScatterTrendChart = ({
     const domainX = rangeX + marginX * 2;
     const domainY = rangeY + marginY * 2;
 
-    const plotW = VIEW_W - PAD_LEFT - PAD_RIGHT;
-    const plotH = VIEW_H - PAD_TOP - PAD_BOTTOM;
+    const plotW = viewW - padLeft - PAD_RIGHT;
+    const plotH = HEIGHT - PAD_TOP - PAD_BOTTOM;
 
     const toPx = (p: ScatterTrendPoint): { cx: number; cy: number } => ({
-        cx: PAD_LEFT + ((p.x - minX + marginX) / domainX) * plotW,
+        cx: padLeft + ((p.x - minX + marginX) / domainX) * plotW,
         cy: PAD_TOP + plotH - ((p.y - minY + marginY) / domainY) * plotH,
     });
 
@@ -71,15 +78,21 @@ export const ScatterTrendChart = ({
     const xTicks = [0, 0.5, 1];
 
     return (
-        <div className="trend-chart">
-            <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} className="trend-chart__svg" role="img" aria-label={`${yLabel} against ${xLabel}`}>
+        <div className="trend-chart" ref={ref}>
+            <svg
+                viewBox={`0 0 ${viewW} ${HEIGHT}`}
+                className="trend-chart__svg"
+                style={{ height: HEIGHT }}
+                role="img"
+                aria-label={`${yLabel} (vertical) against ${xLabel} (horizontal); each point one training, opacity increasing from oldest to most recent`}
+            >
                 {yTicks.map((ratio) => {
                     const y = PAD_TOP + plotH * ratio;
                     const value = maxY + marginY - ratio * domainY;
                     return (
                         <g key={`y-${ratio}`}>
-                            <line x1={PAD_LEFT} y1={y} x2={VIEW_W - PAD_RIGHT} y2={y} stroke="var(--chart-grid)" strokeDasharray="4 4" />
-                            <text x={PAD_LEFT - 10} y={y + 3.5} fontSize="10" fill="var(--chart-axis-text)" textAnchor="end">
+                            <line x1={padLeft} y1={y} x2={viewW - PAD_RIGHT} y2={y} stroke="var(--chart-grid)" strokeDasharray="4 4" />
+                            <text x={padLeft - 8} y={y + 3.5} fontSize="10" fill="var(--chart-axis-text)" textAnchor="end">
                                 {yFormatter(value)}
                             </text>
                         </g>
@@ -87,7 +100,7 @@ export const ScatterTrendChart = ({
                 })}
 
                 {xTicks.map((ratio) => {
-                    const x = PAD_LEFT + plotW * ratio;
+                    const x = padLeft + plotW * ratio;
                     const value = minX - marginX + ratio * domainX;
                     return (
                         <text
@@ -103,23 +116,27 @@ export const ScatterTrendChart = ({
                     );
                 })}
 
-                <text x={PAD_LEFT} y={VIEW_H - 8} fontSize="10" fontWeight="650" fill="var(--muted)" textAnchor="start">
+                <text x={padLeft} y={HEIGHT - 8} fontSize="10" fontWeight="650" fill="var(--muted)" textAnchor="start">
                     {xLabel} →
                 </text>
-                <text x={VIEW_W - PAD_RIGHT} y={VIEW_H - 8} fontSize="10" fill="var(--muted)" textAnchor="end">
-                    faint = older · solid = most recent
-                </text>
-                <text
-                    x={14}
-                    y={PAD_TOP + plotH / 2}
-                    fontSize="10"
-                    fontWeight="650"
-                    fill="var(--muted)"
-                    textAnchor="middle"
-                    transform={`rotate(-90 14 ${PAD_TOP + plotH / 2})`}
-                >
-                    {yLabel}
-                </text>
+                {!compact && (
+                    <text x={viewW - PAD_RIGHT} y={HEIGHT - 8} fontSize="10" fill="var(--muted)" textAnchor="end">
+                        faint = older · solid = most recent
+                    </text>
+                )}
+                {!compact && (
+                    <text
+                        x={14}
+                        y={PAD_TOP + plotH / 2}
+                        fontSize="10"
+                        fontWeight="650"
+                        fill="var(--muted)"
+                        textAnchor="middle"
+                        transform={`rotate(-90 14 ${PAD_TOP + plotH / 2})`}
+                    >
+                        {yLabel}
+                    </text>
+                )}
 
                 {points.map((p, idx) => {
                     const { cx, cy } = toPx(p);

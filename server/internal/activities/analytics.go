@@ -430,3 +430,113 @@ func CurrentMonthDistance(records []FileRecord, now time.Time) (float64, int) {
 func round2(v float64) float64 {
 	return math.Round(v*100) / 100
 }
+
+// TrainingLoadStatus buckets an ACWR-style ratio into a plain-language zone.
+// Bands follow the commonly-cited acute:chronic workload ratio literature
+// (e.g. Gabbett 2016): <0.8 undertraining/detraining, 0.8-1.3 the "sweet
+// spot" associated with lower injury risk, 1.3-1.5 a caution zone, and >1.5
+// a sharp, higher-risk spike relative to recent training.
+//
+// This is a deliberately simplified, distance-only proxy — it has none of
+// the intensity weighting (e.g. session-RPE or HR-based TRIMP) the original
+// research used, and ACWR itself has been criticized for mathematical
+// coupling between the acute and chronic windows (the acute week is part of
+// the chronic average) and for not generalizing cleanly across sports and
+// individuals. It is presented to the user as a trend to watch, not a
+// verdict, and the UI carries that caveat rather than stating it as fact.
+type TrainingLoadStatus string
+
+const (
+	LoadStatusInsufficientData TrainingLoadStatus = "insufficient_data"
+	LoadStatusLow              TrainingLoadStatus = "low"
+	LoadStatusOptimal          TrainingLoadStatus = "optimal"
+	LoadStatusCaution          TrainingLoadStatus = "caution"
+	LoadStatusHigh             TrainingLoadStatus = "high"
+)
+
+const (
+	loadRatioLowMax     = 0.8
+	loadRatioOptimalMax = 1.3
+	loadRatioCautionMax = 1.5
+	// minHistoryDaysForRatio avoids computing a ratio from a sliver of history
+	// (e.g. two runs three days apart), where the chronic average is too thin
+	// to mean anything.
+	minHistoryDaysForRatio = 7.0
+)
+
+// TrainingLoad is a simplified acute (last 7 days) vs. chronic (last 28 days,
+// normalized to a weekly average) workload comparison computed purely from
+// completed-training distance.
+type TrainingLoad struct {
+	AcuteDistanceMeters    float64            `json:"acuteDistanceMeters"`
+	ChronicWeeklyAvgMeters float64            `json:"chronicWeeklyAvgMeters"`
+	Ratio                  float64            `json:"ratio"`
+	Status                 TrainingLoadStatus `json:"status"`
+	HasEnoughHistory       bool               `json:"hasEnoughHistory"`
+}
+
+// ComputeTrainingLoad computes the acute:chronic distance ratio as of `now`.
+// The chronic window normalizes by the actual number of days of available
+// history (capped at 28) rather than always dividing by 4 full weeks, so a
+// new account with only, say, 10 days of logged training isn't penalized by
+// treating 18 non-existent days as zero-volume weeks.
+func ComputeTrainingLoad(records []FileRecord, now time.Time) TrainingLoad {
+	end := time.Date(now.UTC().Year(), now.UTC().Month(), now.UTC().Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, 1)
+	acuteStart := end.AddDate(0, 0, -7)
+	chronicStart := end.AddDate(0, 0, -28)
+
+	var acute, chronic float64
+	var firstDate time.Time
+	hasAny := false
+
+	for _, rec := range completedOnly(records) {
+		date, ok := parseActivityDate(rec.ActivityDate)
+		if !ok {
+			continue
+		}
+		if !hasAny || date.Before(firstDate) {
+			firstDate = date
+			hasAny = true
+		}
+		if date.Before(chronicStart) || !date.Before(end) {
+			continue
+		}
+		chronic += rec.DistanceMeters
+		if !date.Before(acuteStart) {
+			acute += rec.DistanceMeters
+		}
+	}
+
+	load := TrainingLoad{AcuteDistanceMeters: round2(acute)}
+
+	windowStart := chronicStart
+	if hasAny && firstDate.After(windowStart) {
+		windowStart = firstDate
+	}
+	historyDays := end.Sub(windowStart).Hours() / 24
+
+	if !hasAny || chronic <= 0 || historyDays < minHistoryDaysForRatio {
+		load.Status = LoadStatusInsufficientData
+		return load
+	}
+
+	chronicWeeks := historyDays / 7
+	chronicWeekly := chronic / chronicWeeks
+	load.ChronicWeeklyAvgMeters = round2(chronicWeekly)
+	load.HasEnoughHistory = true
+
+	ratio := acute / chronicWeekly
+	load.Ratio = round2(ratio)
+
+	switch {
+	case ratio < loadRatioLowMax:
+		load.Status = LoadStatusLow
+	case ratio <= loadRatioOptimalMax:
+		load.Status = LoadStatusOptimal
+	case ratio <= loadRatioCautionMax:
+		load.Status = LoadStatusCaution
+	default:
+		load.Status = LoadStatusHigh
+	}
+	return load
+}

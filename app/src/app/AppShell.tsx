@@ -31,6 +31,10 @@ export const AppShell = (): ReactElement => {
 
     return (
         <div className="app-layout">
+            <a href="#main-content" className="skip-link">
+                Skip to content
+            </a>
+
             <aside className="sidebar">
                 <div className="sidebar__brand">
                     <span className="sidebar__brand-mark" aria-hidden="true">A</span>
@@ -42,10 +46,17 @@ export const AppShell = (): ReactElement => {
 
                 <label className="btn btn-primary sidebar__upload file-input-btn">
                     <span>{isUploading ? "Uploading…" : "+ Upload Training"}</span>
-                    <input type="file" multiple accept=".fit,.tcx" onChange={handleSidebarUpload} disabled={isUploading} />
+                    <input
+                        type="file"
+                        multiple
+                        accept=".fit,.tcx"
+                        onChange={handleSidebarUpload}
+                        disabled={isUploading}
+                        aria-label="Upload FIT or TCX training file"
+                    />
                 </label>
 
-                <nav className="sidebar__nav">
+                <nav className="sidebar__nav" aria-label="Main navigation">
                     {NAV_ITEMS.map((item) => (
                         <NavLink
                             key={item.to}
@@ -65,7 +76,7 @@ export const AppShell = (): ReactElement => {
                 </footer>
             </aside>
 
-            <main className="app-content">
+            <main className="app-content" id="main-content" tabIndex={-1}>
                 <Outlet />
             </main>
         </div>

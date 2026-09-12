@@ -1,5 +1,8 @@
 import type { ReactElement } from "react";
 
+import { useElementWidth } from "../../../shared/hooks/useElementWidth";
+import { pickVisibleLabelIndices } from "./chart-layout";
+
 export interface LineTrendPoint {
     label: string;
     value: number;
@@ -11,16 +14,25 @@ interface LineTrendChartProps {
     valueFormatter: (value: number) => string;
     emptyMessage: string;
     color?: string;
+    ariaLabel?: string;
 }
 
-const VIEW_W = 760;
-const VIEW_H = 230;
-const PAD_LEFT = 56;
-const PAD_RIGHT = 14;
+const HEIGHT = 200;
+const PAD_LEFT = 48;
+const PAD_RIGHT = 12;
 const PAD_TOP = 18;
-const PAD_BOTTOM = 26;
+const PAD_BOTTOM = 24;
+const MIN_LABEL_SLOT = 40;
 
-export const LineTrendChart = ({ points, valueFormatter, emptyMessage, color = "var(--chart-2)" }: LineTrendChartProps): ReactElement => {
+export const LineTrendChart = ({
+    points,
+    valueFormatter,
+    emptyMessage,
+    color = "var(--chart-2)",
+    ariaLabel = "Weekly average trend",
+}: LineTrendChartProps): ReactElement => {
+    const { ref, width } = useElementWidth<HTMLDivElement>();
+
     if (points.length === 0) {
         return (
             <div className="chart-empty">
@@ -29,6 +41,7 @@ export const LineTrendChart = ({ points, valueFormatter, emptyMessage, color = "
         );
     }
 
+    const viewW = Math.max(width, 260);
     const values = points.map((p) => p.value);
     const rawMin = Math.min(...values);
     const rawMax = Math.max(...values);
@@ -38,8 +51,9 @@ export const LineTrendChart = ({ points, valueFormatter, emptyMessage, color = "
     const maxVal = rawMax + padding;
     const range = maxVal - minVal;
 
-    const plotW = VIEW_W - PAD_LEFT - PAD_RIGHT;
-    const plotH = VIEW_H - PAD_TOP - PAD_BOTTOM;
+    const plotW = viewW - PAD_LEFT - PAD_RIGHT;
+    const plotH = HEIGHT - PAD_TOP - PAD_BOTTOM;
+    const visibleLabels = pickVisibleLabelIndices(points.length, plotW, MIN_LABEL_SLOT);
 
     const coords = points.map((p, idx) => ({
         ...p,
@@ -57,8 +71,8 @@ export const LineTrendChart = ({ points, valueFormatter, emptyMessage, color = "
     const gradientId = `line-fade-${Math.round(minVal)}-${points.length}`;
 
     return (
-        <div className="trend-chart">
-            <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} className="trend-chart__svg" role="img" aria-label="Weekly average trend">
+        <div className="trend-chart" ref={ref}>
+            <svg viewBox={`0 0 ${viewW} ${HEIGHT}`} className="trend-chart__svg" style={{ height: HEIGHT }} role="img" aria-label={ariaLabel}>
                 <defs>
                     <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor={color} stopOpacity="0.22" />
@@ -70,8 +84,8 @@ export const LineTrendChart = ({ points, valueFormatter, emptyMessage, color = "
                     const y = PAD_TOP + plotH * ratio;
                     return (
                         <g key={ratio}>
-                            <line x1={PAD_LEFT} y1={y} x2={VIEW_W - PAD_RIGHT} y2={y} stroke="var(--chart-grid)" strokeDasharray="4 4" />
-                            <text x={PAD_LEFT - 10} y={y + 3.5} fontSize="10" fill="var(--chart-axis-text)" textAnchor="end">
+                            <line x1={PAD_LEFT} y1={y} x2={viewW - PAD_RIGHT} y2={y} stroke="var(--chart-grid)" strokeDasharray="4 4" />
+                            <text x={PAD_LEFT - 8} y={y + 3.5} fontSize="10" fill="var(--chart-axis-text)" textAnchor="end">
                                 {valueFormatter(maxVal - ratio * range)}
                             </text>
                         </g>
@@ -88,9 +102,11 @@ export const LineTrendChart = ({ points, valueFormatter, emptyMessage, color = "
                             <title>{pt.tooltip ?? `${pt.label}: ${valueFormatter(pt.value)}`}</title>
                             {isLast && <circle cx={pt.x} cy={pt.y} r={7} fill={color} fillOpacity={0.18} />}
                             <circle cx={pt.x} cy={pt.y} r={isLast ? 4 : 3} fill={color} stroke="var(--surface)" strokeWidth={isLast ? 1.5 : 1} />
-                            <text x={pt.x} y={VIEW_H - 8} fontSize="10" textAnchor="middle" fill="var(--chart-axis-text)">
-                                {pt.label}
-                            </text>
+                            {visibleLabels.has(idx) && (
+                                <text x={pt.x} y={HEIGHT - 8} fontSize="10" textAnchor="middle" fill="var(--chart-axis-text)">
+                                    {pt.label}
+                                </text>
+                            )}
                         </g>
                     );
                 })}

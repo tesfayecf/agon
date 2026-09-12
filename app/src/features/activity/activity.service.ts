@@ -103,6 +103,16 @@ export interface GoalWithProgress {
     periodEnd: string;
 }
 
+export type TrainingLoadStatus = "insufficient_data" | "low" | "optimal" | "caution" | "high";
+
+export interface TrainingLoad {
+    acuteDistanceMeters: number;
+    chronicWeeklyAvgMeters: number;
+    ratio: number;
+    status: TrainingLoadStatus;
+    hasEnoughHistory: boolean;
+}
+
 export interface DashboardStats {
     totalDistance: number;
     totalElevation: number;
@@ -120,6 +130,7 @@ export interface DashboardStats {
     heartRateTrend: HeartRateTrendPoint[];
     paceHeartRatePoints: PaceHeartRatePoint[];
     personalBests: PersonalBest[];
+    trainingLoad: TrainingLoad;
     goals: GoalWithProgress[];
 }
 

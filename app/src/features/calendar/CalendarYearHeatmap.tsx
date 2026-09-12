@@ -1,8 +1,8 @@
-import { useMemo, type ReactElement } from "react";
+import { useMemo, useRef, useState, type KeyboardEvent, type ReactElement } from "react";
 
 import type { ActivityFile } from "../activity/activity.service";
 import { formatDistance } from "../../shared/utils/format";
-import { getYearMatrix, getWeekdayLabels } from "./calendar.utils";
+import { getYearMatrix, getWeekdayLabels, toDateKey, type YearHeatmapWeek } from "./calendar.utils";
 
 interface CalendarYearHeatmapProps {
     year: number;
@@ -26,9 +26,29 @@ const levelFor = (distance: number, maxDistance: number): number => {
     return 1;
 };
 
+/** Finds the first in-year cell's [week, day] position, searching forward from a start point. */
+const firstInYearPosition = (weeks: YearHeatmapWeek[]): [number, number] => {
+    for (let w = 0; w < weeks.length; w += 1) {
+        for (let d = 0; d < 7; d += 1) {
+            if (weeks[w]?.days[d]?.isInYear) return [w, d];
+        }
+    }
+    return [0, 0];
+};
+
+const lastInYearPosition = (weeks: YearHeatmapWeek[]): [number, number] => {
+    for (let w = weeks.length - 1; w >= 0; w -= 1) {
+        for (let d = 6; d >= 0; d -= 1) {
+            if (weeks[w]?.days[d]?.isInYear) return [w, d];
+        }
+    }
+    return [0, 0];
+};
+
 export const CalendarYearHeatmap = ({ year, activitiesByDate, onSelectDay }: CalendarYearHeatmapProps): ReactElement => {
     const weeks = useMemo(() => getYearMatrix(year), [year]);
     const weekdayLabels = getWeekdayLabels();
+    const cellRefs = useRef(new Map<string, HTMLButtonElement>());
 
     const { totalsByKey, maxDistance, totalDistance, totalSessions } = useMemo(() => {
         const totals = new Map<string, DayTotal>();
@@ -49,6 +69,66 @@ export const CalendarYearHeatmap = ({ year, activitiesByDate, onSelectDay }: Cal
         return { totalsByKey: totals, maxDistance: max, totalDistance: distanceSum, totalSessions: sessionSum };
     }, [weeks, activitiesByDate]);
 
+    // Roving tabindex: only one cell is a Tab stop at a time (otherwise a year is 365+
+    // separate stops); arrow keys move focus within the grid instead. Defaults to today
+    // when it falls in the displayed year, so opening "this year" lands somewhere useful.
+    const [activeKey, setActiveKey] = useState<string>(() => {
+        const todayKey = toDateKey(new Date());
+        for (const week of weeks) {
+            if (week.days.some((d) => d.isInYear && d.key === todayKey)) return todayKey;
+        }
+        const [w, d] = firstInYearPosition(weeks);
+        return weeks[w]?.days[d]?.key ?? "";
+    });
+
+    const focusCell = (key: string): void => {
+        setActiveKey(key);
+        cellRefs.current.get(key)?.focus();
+    };
+
+    const handleKeyDown = (e: KeyboardEvent<HTMLButtonElement>, weekIndex: number, dayIndex: number): void => {
+        let targetWeek = weekIndex;
+        let targetDay = dayIndex;
+
+        switch (e.key) {
+            case "ArrowRight":
+            case "ArrowLeft": {
+                const step = e.key === "ArrowRight" ? 1 : -1;
+                let w = weekIndex + step;
+                while (w >= 0 && w < weeks.length && !weeks[w]?.days[dayIndex]?.isInYear) w += step;
+                if (w < 0 || w >= weeks.length) return;
+                targetWeek = w;
+                break;
+            }
+            case "ArrowDown":
+            case "ArrowUp": {
+                const step = e.key === "ArrowDown" ? 1 : -1;
+                const d = dayIndex + step;
+                if (d < 0 || d > 6 || !weeks[weekIndex]?.days[d]?.isInYear) return;
+                targetDay = d;
+                break;
+            }
+            case "Home": {
+                const [w, d] = firstInYearPosition(weeks);
+                targetWeek = w;
+                targetDay = d;
+                break;
+            }
+            case "End": {
+                const [w, d] = lastInYearPosition(weeks);
+                targetWeek = w;
+                targetDay = d;
+                break;
+            }
+            default:
+                return;
+        }
+
+        e.preventDefault();
+        const targetKey = weeks[targetWeek]?.days[targetDay]?.key;
+        if (targetKey !== undefined) focusCell(targetKey);
+    };
+
     return (
         <div className="year-heatmap">
             <div className="year-heatmap__summary">
@@ -56,8 +136,8 @@ export const CalendarYearHeatmap = ({ year, activitiesByDate, onSelectDay }: Cal
             </div>
 
             <div className="year-heatmap__scroll">
-                <div className="year-heatmap__month-row">
-                    <span className="year-heatmap__weekday-spacer" aria-hidden="true" />
+                <div className="year-heatmap__month-row" aria-hidden="true">
+                    <span className="year-heatmap__weekday-spacer" />
                     {weeks.map((week, idx) => (
                         <span key={idx} className="year-heatmap__month-label">
                             {week.monthLabel ?? ""}
@@ -65,8 +145,12 @@ export const CalendarYearHeatmap = ({ year, activitiesByDate, onSelectDay }: Cal
                     ))}
                 </div>
 
-                <div className="year-heatmap__main-row">
-                    <div className="year-heatmap__weekdays">
+                <div
+                    className="year-heatmap__main-row"
+                    role="group"
+                    aria-label={`Daily training activity heatmap for ${year}. Use arrow keys to move between days.`}
+                >
+                    <div className="year-heatmap__weekdays" aria-hidden="true">
                         {weekdayLabels.map((label, idx) => (
                             <span key={label} className="year-heatmap__weekday-label">
                                 {idx % 2 === 1 ? label.slice(0, 3) : ""}
@@ -77,7 +161,7 @@ export const CalendarYearHeatmap = ({ year, activitiesByDate, onSelectDay }: Cal
                     <div className="year-heatmap__grid">
                         {weeks.map((week, wIdx) => (
                             <div key={wIdx} className="year-heatmap__col">
-                                {week.days.map((day) => {
+                                {week.days.map((day, dIdx) => {
                                     if (!day.isInYear) {
                                         return <span key={day.key} className="year-heatmap__cell year-heatmap__cell--empty" aria-hidden="true" />;
                                     }
@@ -91,10 +175,17 @@ export const CalendarYearHeatmap = ({ year, activitiesByDate, onSelectDay }: Cal
                                     return (
                                         <button
                                             key={day.key}
+                                            ref={(el) => {
+                                                if (el) cellRefs.current.set(day.key, el);
+                                                else cellRefs.current.delete(day.key);
+                                            }}
                                             type="button"
+                                            tabIndex={day.key === activeKey ? 0 : -1}
                                             className={`year-heatmap__cell year-heatmap__cell--level-${level}${day.isToday ? " year-heatmap__cell--today" : ""}`}
                                             title={`${dateLabel}: ${detail}`}
                                             aria-label={`${dateLabel}: ${detail}`}
+                                            onFocus={() => setActiveKey(day.key)}
+                                            onKeyDown={(e) => handleKeyDown(e, wIdx, dIdx)}
                                             onClick={() => onSelectDay(day.key)}
                                         />
                                     );
@@ -105,10 +196,10 @@ export const CalendarYearHeatmap = ({ year, activitiesByDate, onSelectDay }: Cal
                 </div>
             </div>
 
-            <div className="year-heatmap__legend">
+            <div className="year-heatmap__legend" aria-hidden="true">
                 <span>Less</span>
                 {Array.from({ length: LEVEL_COUNT }, (_, level) => (
-                    <span key={level} className={`year-heatmap__cell year-heatmap__cell--level-${level}`} aria-hidden="true" />
+                    <span key={level} className={`year-heatmap__cell year-heatmap__cell--level-${level}`} />
                 ))}
                 <span>More</span>
             </div>
