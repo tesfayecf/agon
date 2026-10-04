@@ -105,3 +105,44 @@ func TestDeleteFileRecord(t *testing.T) {
 		t.Fatal("expected error when deleting a missing record")
 	}
 }
+
+func TestUpdateFileRecordWorkoutRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	db, err := sqlite.Open(ctx, sqlite.Config{Path: filepath.Join(t.TempDir(), "workout_test.db")})
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	defer db.Close()
+	if err := EnsureTable(ctx, db); err != nil {
+		t.Fatalf("ensure table: %v", err)
+	}
+	if err := InsertFileRecord(ctx, db, FileRecord{ID: "fit-w", Filename: "w.fit", FileType: "FIT", S3Key: "k", Status: "success"}); err != nil {
+		t.Fatalf("insert: %v", err)
+	}
+
+	intervals := []Interval{{Kind: IntervalKindWork, Basis: IntervalBasisTime, Start: 60, Length: 120, Label: "Rep 1", DistanceMeters: 500}}
+	if err := UpdateFileRecordWorkout(ctx, db, "fit-w", WorkoutTypeIntervals, intervals); err != nil {
+		t.Fatalf("update workout: %v", err)
+	}
+	got, err := GetFileRecord(ctx, db, "fit-w")
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	if got.WorkoutType != WorkoutTypeIntervals || len(got.Intervals) != 1 || got.Intervals[0].Label != "Rep 1" || got.Intervals[0].DistanceMeters != 500 {
+		t.Fatalf("unexpected workout round trip: %+v", got)
+	}
+
+	if err := UpdateFileRecordWorkout(ctx, db, "fit-w", "", nil); err != nil {
+		t.Fatalf("clear workout: %v", err)
+	}
+	list, _ := ListFileRecords(ctx, db)
+	if list[0].WorkoutType != "" || list[0].Intervals == nil || len(list[0].Intervals) != 0 {
+		t.Fatalf("expected cleared workout with empty (non-nil) intervals, got %+v", list[0])
+	}
+
+	if err := UpdateFileRecordWorkout(ctx, db, "missing", WorkoutTypeEasy, nil); err == nil {
+		t.Fatal("expected not-found error for unknown id")
+	}
+}

@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import { PageHeader } from "../../shared/components/PageHeader";
 import { Card } from "../../shared/components/Card";
 import { ThemeToggle } from "../../shared/components/ThemeToggle";
+import { PhysicalMetricsCard } from "./PhysicalMetricsCard";
 
 export const SettingsPage = (): ReactElement => {
     return (
@@ -14,6 +15,8 @@ export const SettingsPage = (): ReactElement => {
                 </p>
                 <ThemeToggle />
             </Card>
+
+            <PhysicalMetricsCard />
 
             <Card title="Preferences">
                 <p style={{ color: "var(--muted)", margin: 0 }}>

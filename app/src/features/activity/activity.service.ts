@@ -10,6 +10,33 @@ export interface ActivityRecord {
     altitude?: number;
 }
 
+export type WorkoutType = "" | "easy" | "long" | "tempo" | "hills" | "intervals" | "race" | "other";
+export type IntervalKind = "warmup" | "work" | "recovery" | "cooldown";
+/** Unit of an interval's start and length: seconds ("time") or meters ("distance"). */
+export type IntervalBasis = "time" | "distance";
+
+/**
+ * One segment of an interval training. kind/label/basis/start/length are the
+ * user's input; every other field is derived from the pace and heart-rate
+ * profile (by the server on save, and by `resolveInterval` for live previews).
+ */
+export interface WorkoutInterval {
+    kind: IntervalKind;
+    label?: string;
+    basis: IntervalBasis;
+    start: number;
+    length: number;
+    startSeconds?: number;
+    endSeconds?: number;
+    durationSeconds?: number;
+    startMeters?: number;
+    endMeters?: number;
+    distanceMeters?: number;
+    avgPaceSecondsPerKm?: number;
+    avgHeartRate?: number;
+    maxHeartRate?: number;
+}
+
 export interface ActivityFile {
     id: string;
     filename: string;
@@ -29,9 +56,9 @@ export interface ActivityFile {
     tags?: string;
     elevationGain?: number;
     avgHeartRate?: number;
+    workoutType?: WorkoutType;
+    intervals?: WorkoutInterval[];
 }
-
-// ... existing code ...
 
 export const updateActivityFileMetadata = async (
     id: string,
@@ -41,6 +68,17 @@ export const updateActivityFileMetadata = async (
         method: "PUT",
         path: `/api/activities/${encodeURIComponent(id)}`,
         body: metadata,
+    });
+};
+
+export const updateActivityWorkout = async (
+    id: string,
+    workout: { workoutType: WorkoutType; intervals: WorkoutInterval[] },
+): Promise<ActivityFile> => {
+    return apiRequest<ActivityFile>({
+        method: "PUT",
+        path: `/api/activities/${encodeURIComponent(id)}/workout`,
+        body: workout,
     });
 };
 
@@ -126,7 +164,6 @@ export interface DashboardStats {
     totalDuration: number;
     trainingCount: number;
     avgHeartRate: number;
-    recentActivities: ActivityFile[];
     currentWeekDistance: number;
     currentWeekSessions: number;
     currentMonthDistance: number;
@@ -139,6 +176,171 @@ export interface DashboardStats {
     personalBests: PersonalBest[];
     trainingLoad: TrainingLoad;
     goals: GoalWithProgress[];
+    endurance: EnduranceAnalytics;
+    intervals: IntervalAnalytics;
+    racePredictor: RacePredictor;
+}
+
+export interface RunSummary {
+    activityId: string;
+    activityName: string;
+    date: string;
+    distanceMeters: number;
+    durationSeconds: number;
+    avgHeartRate: number;
+}
+
+export interface EnduranceWeekPoint {
+    weekStart: string;
+    distanceMeters: number;
+    longestMeters: number;
+    runCount: number;
+    isCurrent: boolean;
+}
+
+export interface DistanceBand {
+    label: string;
+    minMeters: number;
+    /** 0 for the open-ended last band. */
+    maxMeters: number;
+    count: number;
+}
+
+/** Every completed run that is not an interval session. Totals cover the last `windowWeeks` weeks. */
+export interface EnduranceAnalytics {
+    windowWeeks: number;
+    runCount: number;
+    totalDistanceMeters: number;
+    totalDurationSeconds: number;
+    elevationGainMeters: number;
+    avgDistanceMeters: number;
+    avgPaceSecondsPerKm: number;
+    avgHeartRate: number;
+    longestRun: RunSummary | null;
+    weekly: EnduranceWeekPoint[];
+    efficiencyPoints: PaceHeartRatePoint[];
+    distanceBands: DistanceBand[];
+}
+
+export interface IntervalRep {
+    label?: string;
+    basis: IntervalBasis;
+    durationSeconds: number;
+    distanceMeters: number;
+    avgPaceSecondsPerKm: number;
+    avgHeartRate: number;
+    maxHeartRate: number;
+    /** False when the pace looks like a GPS glitch; such reps are left out of pace figures. */
+    plausible: boolean;
+}
+
+export interface SessionSegment {
+    kind: IntervalKind;
+    startSeconds: number;
+    durationSeconds: number;
+    avgPaceSecondsPerKm: number;
+    avgHeartRate: number;
+}
+
+export interface IntervalSession {
+    activityId: string;
+    activityName: string;
+    date: string;
+    durationSeconds: number;
+    structure: string;
+    repCount: number;
+    workSeconds: number;
+    workMeters: number;
+    recoverySeconds: number;
+    avgWorkPaceSecondsPerKm: number;
+    avgWorkHeartRate: number;
+    workMetersPerBeat: number;
+    /** Last vs. first rep of the session's most common length, in %; positive = slower. */
+    fadePercent: number | null;
+    reps: IntervalRep[];
+    segments: SessionSegment[];
+}
+
+export interface RepPacePoint {
+    date: string;
+    activityId: string;
+    activityName: string;
+    avgPaceSecondsPerKm: number;
+    avgHeartRate: number;
+    reps: number;
+}
+
+export interface RepDurationSeries {
+    durationSeconds: number;
+    label: string;
+    sessionCount: number;
+    points: RepPacePoint[];
+}
+
+export interface QualityWeekPoint {
+    weekStart: string;
+    workSeconds: number;
+    workMeters: number;
+    totalSeconds: number;
+    intervalSessionCount: number;
+    isCurrent: boolean;
+}
+
+/** Labelled interval sessions. Counters cover the last `windowWeeks` weeks; sessions are chronological. */
+export interface IntervalAnalytics {
+    windowWeeks: number;
+    sessionCount: number;
+    repCount: number;
+    workSeconds: number;
+    workMeters: number;
+    workShare: number;
+    avgWorkRestRatio: number;
+    unlabelledCount: number;
+    sessions: IntervalSession[];
+    repProgression: RepDurationSeries[];
+    weeklyQuality: QualityWeekPoint[];
+}
+
+export type PredictionMethod = "none" | "best_effort" | "heart_rate";
+
+export interface RacePrediction {
+    label: string;
+    distanceMeters: number;
+    predictedSeconds: number;
+    paceSecondsPerKm: number;
+    /** 0 when no personal best exists for this distance. */
+    personalBestSeconds: number;
+    /** The race is far longer than any recent run, so endurance is unproven. */
+    isExtrapolated: boolean;
+}
+
+export interface PredictionBasis {
+    activityId: string;
+    activityName: string;
+    date: string;
+    distanceMeters: number;
+    durationSeconds: number;
+    vdot: number;
+}
+
+export interface VDOTTrendPoint {
+    weekStart: string;
+    vdot: number;
+    runCount: number;
+    isCurrent: boolean;
+}
+
+/** VDOT-based race predictions from the last `windowWeeks` weeks of non-interval runs. */
+export interface RacePredictor {
+    method: PredictionMethod;
+    vdot: number;
+    windowWeeks: number;
+    sampleCount: number;
+    hasHeartRateProfile: boolean;
+    longestRunMeters: number;
+    basis: PredictionBasis | null;
+    predictions: RacePrediction[];
+    trend: VDOTTrendPoint[];
 }
 
 export const fetchDashboardStats = async (): Promise<DashboardStats> => {

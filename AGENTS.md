@@ -48,11 +48,13 @@ config/
 
 - `GET /api/health/live` — liveness.
 - `GET /api/health/ready` — readiness.
-- `GET /api/dashboard` — aggregated dashboard data.
+- `GET /api/dashboard` — aggregated dashboard data, including `endurance` (non-interval runs) and `intervals` (labelled interval sessions: per-session reps/fade, rep pace by rep length, weekly work time) used by the dashboard's Endurance and Intervals tabs (`server/internal/activities/insights.go`), and `racePredictor` (VDOT-based race-time predictions, effort-adjusted with heart rate when the profile has resting and max HR; `server/internal/activities/racepredictor.go`).
+- `GET /api/profile` / `PUT /api/profile` — the athlete's physical metrics (height, weight, birth date, sex, resting/max heart rate; all optional, `0`/`""` = unset) plus derived age, BMI, estimated max HR and HR reserve. Implausible values return `400`. Stored in a single-row SQLite table (`server/internal/profile/`).
 - `GET /api/activities` — list activities.
 - `GET /api/activities/{id}` — activity detail.
 - `PUT /api/activities/{id}` — update activity metadata (name, description, tags, …).
 - `DELETE /api/activities/{id}` — delete an activity.
+- `PUT /api/activities/{id}/workout` — set the workout type (`easy|long|tempo|hills|intervals|race|other`) and, for `intervals`, a manually specified interval list. Each interval is `kind` (`warmup|work|recovery|cooldown`), `basis` (`time`: seconds, or `distance`: meters), `start`, `length` and optional `label`. Time range, distance, pace and heart rate are derived server-side from the pace/heart-rate profile. Validation errors return `400`. The same operation is exposed to MCP as `set_activity_workout` (read current values from `agon://activities/{id}/workout`).
 - `POST /api/activities/upload` — multipart upload under the `files` field. `.fit` and `.tcx` only. Returns one result per file. Unsupported/malformed files return an error result and cause HTTP `400` while preserving the other per-file results. Do not drop successful results when one file fails.
 - Analytics and planning routes are registered in `httpapi/analytics_routes.go` and `httpapi/planning_routes.go`.
 

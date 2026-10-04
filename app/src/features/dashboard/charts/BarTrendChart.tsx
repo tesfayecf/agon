@@ -16,6 +16,8 @@ interface BarTrendChartProps {
     emptyMessage: string;
     color?: string;
     ariaLabel?: string;
+    /** Draw every bar at full strength with its value on top, for categories rather than time periods. */
+    uniform?: boolean;
 }
 
 // The SVG viewBox is set to the real measured container width (via
@@ -43,6 +45,7 @@ export const BarTrendChart = ({
     emptyMessage,
     color = "var(--chart-1)",
     ariaLabel = "Training volume by period",
+    uniform = false,
 }: BarTrendChartProps): ReactElement => {
     const { ref, width } = useElementWidth<HTMLDivElement>();
 
@@ -83,6 +86,7 @@ export const BarTrendChart = ({
                     const x = PAD_LEFT + slot * idx + (slot - barWidth) / 2;
                     const barHeight = (point.value / maxValue) * plotH;
                     const y = PAD_TOP + plotH - barHeight;
+                    const emphasized = uniform || point.isCurrent === true;
                     return (
                         <g key={`${point.label}-${idx}`}>
                             <title>{point.tooltip ?? `${point.label}: ${valueFormatter(point.value)}`}</title>
@@ -93,9 +97,9 @@ export const BarTrendChart = ({
                                 height={Math.max(barHeight, point.value > 0 ? 2 : 0)}
                                 rx={3}
                                 fill={color}
-                                fillOpacity={point.isCurrent ? 1 : 0.42}
+                                fillOpacity={emphasized ? 1 : 0.42}
                             />
-                            {point.isCurrent && point.value > 0 && (
+                            {emphasized && point.value > 0 && (
                                 <text x={x + barWidth / 2} y={y - 5} fontSize="10" fontWeight="650" fill={color} textAnchor="middle">
                                     {valueFormatter(point.value)}
                                 </text>

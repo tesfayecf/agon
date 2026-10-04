@@ -3,7 +3,7 @@ import { useState, type FormEvent, type ReactElement } from "react";
 import { createGoal, deleteGoal, updateGoal, type GoalType, type GoalWithProgress } from "./goals.service";
 import { EmptyState } from "../../shared/components/StateViews";
 import { ProgressRing } from "../../shared/components/ProgressRing";
-import { formatDistance } from "../../shared/utils/format";
+import { formatDayMonth, formatDistance } from "../../shared/utils/format";
 
 interface GoalsPanelProps {
     goals: GoalWithProgress[];
@@ -16,9 +16,8 @@ const GOAL_TYPE_LABELS: Record<GoalType, string> = {
 };
 
 const shortDate = (value: string): string => {
-    const date = new Date(`${value}T00:00:00`);
-    if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+    const label = formatDayMonth(value);
+    return label === "—" ? value : label;
 };
 
 export const GoalsPanel = ({ goals, onChanged }: GoalsPanelProps): ReactElement => {

@@ -99,6 +99,22 @@ func completedOnly(records []FileRecord) []FileRecord {
 	return out
 }
 
+func TotalDistance(records []FileRecord) float64 {
+	total := 0.0
+	for _, r := range completedOnly(records) {
+		total += r.DistanceMeters
+	}
+	return total
+}
+
+func TotalDuration(records []FileRecord) float64 {
+	total := 0.0
+	for _, r := range completedOnly(records) {
+		total += r.DurationSeconds
+	}
+	return total
+}
+
 // WeeklyTrend aggregates completed training distance by Monday-starting week for the last
 // `weeks` weeks (including the current week), zero-filling weeks without any training.
 func WeeklyTrend(records []FileRecord, weeks int, now time.Time) []WeeklyTrendPoint {

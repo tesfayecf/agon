@@ -4,7 +4,7 @@ import { deleteActivityFile, fetchActivityFiles, uploadActivityFiles, type Activ
 import { PageHeader } from "../../shared/components/PageHeader";
 import { Card } from "../../shared/components/Card";
 import { LoadingState, EmptyState, ErrorState } from "../../shared/components/StateViews";
-import { formatDistance, formatDuration, formatElevation } from "../../shared/utils/format";
+import { formatDateTime, formatDistance, formatDuration, formatElevation } from "../../shared/utils/format";
 
 interface FilterState {
     q: string;
@@ -194,7 +194,8 @@ export const TracksPage = (): ReactElement => {
                                     <div className="record-list__meta">
                                         <strong>{file.name || file.filename}</strong>
                                         <small>
-                                            {file.activityDate ? new Date(file.activityDate).toLocaleString() : file.filename}
+                                            {file.activityDate ? formatDateTime(file.activityDate) : file.filename}
+                                            {file.workoutType ? ` · ${file.workoutType === "intervals" ? `Intervals${file.intervals?.some((iv) => iv.kind === "work") ? ` (${file.intervals.filter((iv) => iv.kind === "work").length}×)` : ""}` : file.workoutType}` : ""}
                                             {file.tags ? ` · ${file.tags}` : ""}
                                         </small>
                                     </div>

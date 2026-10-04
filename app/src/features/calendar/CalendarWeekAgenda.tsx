@@ -3,7 +3,7 @@ import { useState, type FormEvent, type ReactElement } from "react";
 import type { CalendarDayView } from "../schedule/schedule.service";
 import { createPlannedSession, deletePlannedSession } from "../schedule/schedule.service";
 import { Badge } from "../../shared/components/Badge";
-import { formatDistance } from "../../shared/utils/format";
+import { formatDayMonth, formatDistance } from "../../shared/utils/format";
 
 const WEEKDAY_LABELS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -22,7 +22,7 @@ export const CalendarWeekAgenda = ({ days, onSelectTraining, onChanged }: Calend
                 <div key={day.date} className={`week-agenda__day${day.isToday ? " week-agenda__day--today" : ""}`}>
                     <div className="week-agenda__day-header">
                         <span className="week-agenda__weekday">{WEEKDAY_LABELS[idx]}</span>
-                        <span className="week-agenda__date">{new Date(`${day.date}T00:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" })}</span>
+                        <span className="week-agenda__date">{formatDayMonth(day.date)}</span>
                     </div>
 
                     <div className="week-agenda__entries">

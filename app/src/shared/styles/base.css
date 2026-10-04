@@ -78,6 +78,7 @@ h4 {
 /* Tighter offset for controls where a 2px gap would clip out of a small box. */
 .icon-btn:focus-visible,
 .chart-tab:focus-visible,
+.dashboard-tab:focus-visible,
 .year-heatmap__cell:focus-visible,
 .calendar__chip:focus-visible {
     outline-offset: -2px;

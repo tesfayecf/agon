@@ -15,6 +15,8 @@ interface LineTrendChartProps {
     emptyMessage: string;
     color?: string;
     ariaLabel?: string;
+    /** Plot lower values higher, e.g. for pace where a lower number is faster. */
+    invertY?: boolean;
 }
 
 const HEIGHT = 200;
@@ -30,6 +32,7 @@ export const LineTrendChart = ({
     emptyMessage,
     color = "var(--chart-2)",
     ariaLabel = "Weekly average trend",
+    invertY = false,
 }: LineTrendChartProps): ReactElement => {
     const { ref, width } = useElementWidth<HTMLDivElement>();
 
@@ -58,7 +61,7 @@ export const LineTrendChart = ({
     const coords = points.map((p, idx) => ({
         ...p,
         x: PAD_LEFT + (points.length > 1 ? (idx / (points.length - 1)) * plotW : plotW / 2),
-        y: PAD_TOP + plotH - ((p.value - minVal) / range) * plotH,
+        y: invertY ? PAD_TOP + ((p.value - minVal) / range) * plotH : PAD_TOP + plotH - ((p.value - minVal) / range) * plotH,
     }));
 
     const first = coords[0];
@@ -86,7 +89,7 @@ export const LineTrendChart = ({
                         <g key={ratio}>
                             <line x1={PAD_LEFT} y1={y} x2={viewW - PAD_RIGHT} y2={y} stroke="var(--chart-grid)" strokeDasharray="4 4" />
                             <text x={PAD_LEFT - 8} y={y + 3.5} fontSize="10" fill="var(--chart-axis-text)" textAnchor="end">
-                                {valueFormatter(maxVal - ratio * range)}
+                                {valueFormatter(invertY ? minVal + ratio * range : maxVal - ratio * range)}
                             </text>
                         </g>
                     );

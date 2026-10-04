@@ -1,9 +1,9 @@
+import { formatDayMonth, formatTime } from "../../shared/utils/format";
 import type { MetricTrend } from "../../shared/components/MetricCard";
-import type { PaceHeartRatePoint } from "../activity/activity.service";
+import type { PaceHeartRatePoint, RacePrediction } from "../activity/activity.service";
 
 export const weekLabel = (weekStart: string): string => {
-    const d = new Date(`${weekStart}T00:00:00`);
-    return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+    return formatDayMonth(weekStart);
 };
 
 export const monthLabel = (month: string): string => {
@@ -52,4 +52,47 @@ export const computeEfficiencyInsight = (points: PaceHeartRatePoint[]): Efficien
     const recentAvg = avgEf(points.slice(-half));
     if (earlierAvg <= 0) return null;
     return { changePercent: ((recentAvg - earlierAvg) / earlierAvg) * 100 };
+};
+
+export type Tone = "positive" | "negative" | "flat";
+
+/** Below this magnitude a rep-to-rep pace change is treated as even pacing. */
+export const FADE_EVEN_THRESHOLD_PERCENT = 1;
+
+/** Describes a session's fade (last vs. first rep, % slower) in words, e.g. "8% faster". */
+export const describeFade = (fadePercent: number | null): { label: string; tone: Tone } | null => {
+    if (fadePercent === null || !Number.isFinite(fadePercent)) return null;
+    if (Math.abs(fadePercent) < FADE_EVEN_THRESHOLD_PERCENT) return { label: "Even", tone: "flat" };
+    const amount = `${Math.abs(fadePercent).toFixed(0)}%`;
+    return fadePercent < 0 ? { label: `${amount} faster`, tone: "positive" } : { label: `${amount} slower`, tone: "negative" };
+};
+
+/** The rep length shown first: the one trained in the most sessions, the shorter one on ties. */
+export const defaultRepDuration = (series: { durationSeconds: number; sessionCount: number }[]): number | null => {
+    let best: { durationSeconds: number; sessionCount: number } | null = null;
+    for (const s of series) {
+        if (best === null || s.sessionCount > best.sessionCount) best = s;
+    }
+    return best?.durationSeconds ?? null;
+};
+
+/** Change in pace between the first and last point, in seconds per km (negative = faster). */
+export const paceChange = (paces: number[]): number | null => {
+    const valid = paces.filter((p) => p > 0);
+    const first = valid[0];
+    const last = valid[valid.length - 1];
+    if (valid.length < 2 || first === undefined || last === undefined) return null;
+    return last - first;
+};
+
+export const formatRatio = (ratio: number): string => (ratio > 0 ? `${ratio.toFixed(1)} : 1` : "—");
+
+export const formatPercent = (share: number): string => `${Math.round(share * 100)}%`;
+
+/** How a prediction compares with the personal best, e.g. "0:42 under PB", or null when there is no PB. */
+export const describeVsBest = (p: RacePrediction): { label: string; tone: Tone } | null => {
+    if (p.personalBestSeconds <= 0) return null;
+    const diff = p.personalBestSeconds - p.predictedSeconds;
+    if (Math.abs(diff) < 1) return { label: "Matches PB", tone: "flat" };
+    return diff > 0 ? { label: `${formatTime(diff)} under PB`, tone: "positive" } : { label: `${formatTime(-diff)} over PB`, tone: "negative" };
 };

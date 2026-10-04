@@ -9,6 +9,98 @@
     display: grid;
     grid-template-columns: 248px 1fr;
     min-height: 100vh;
+    transition: grid-template-columns 180ms ease;
+}
+
+.sidebar__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.sidebar__toggle {
+    flex-shrink: 0;
+    width: 1.9rem;
+    height: 1.9rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--ink-secondary);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.sidebar__toggle:hover {
+    background: var(--surface-muted);
+    color: var(--ink);
+}
+
+.sidebar__upload-icon {
+    margin-right: 0.35rem;
+}
+
+/* Collapsed sidebar (desktop only; narrow screens already get the bottom tab bar). */
+@media (min-width: 961px) {
+    .app-layout.is-collapsed {
+        grid-template-columns: 72px 1fr;
+    }
+
+    .is-collapsed .sidebar {
+        padding-inline: 0.6rem;
+        align-items: stretch;
+    }
+
+    .is-collapsed .sidebar__top {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .is-collapsed .sidebar__brand {
+        padding: 0;
+    }
+
+    .is-collapsed .sidebar__toggle {
+        align-self: center;
+    }
+
+    .is-collapsed .nav-link {
+        justify-content: center;
+        padding-inline: 0;
+    }
+
+    .is-collapsed .sidebar__upload {
+        justify-content: center;
+        padding-inline: 0;
+    }
+
+    .is-collapsed .sidebar__upload-icon {
+        margin-right: 0;
+        font-size: 1.2rem;
+    }
+
+    /* Visually hidden, still announced. The sidebar is sticky, so it is their containing block. */
+    .is-collapsed .nav-link__label,
+    .is-collapsed .sidebar__upload-label,
+    .is-collapsed .sidebar__brand-text,
+    .is-collapsed .sidebar__footer {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-layout {
+        transition: none;
+    }
 }
 
 .sidebar {
@@ -120,6 +212,9 @@
 }
 
 .app-content {
+    /* A grid item defaults to min-width: auto, which lets a wide child (tables,
+       charts) stretch the whole page column instead of scrolling in its own box. */
+    min-width: 0;
     padding: 2rem 2.5rem 3rem;
     overflow-y: auto;
     max-height: 100vh;
@@ -332,25 +427,6 @@
     align-items: center;
     gap: var(--space-3);
     flex-wrap: wrap;
-}
-
-.card__link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    /* Padding (not just line-height) so the hit area clears the 24px WCAG 2.2 AA
-       minimum target size without inflating the visible chip. */
-    padding: 0.35rem 0.1rem;
-    margin: -0.35rem -0.1rem;
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--accent);
-    text-decoration: none;
-    white-space: nowrap;
-}
-
-.card__link:hover {
-    gap: 0.45rem;
 }
 
 .card__note {
@@ -836,41 +912,6 @@
     padding: 0.1rem 0.45rem;
 }
 
-.calendar-mini {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 0.3rem;
-}
-
-.calendar-mini__day {
-    aspect-ratio: 1;
-    border-radius: 0.4rem;
-    background: var(--surface-muted);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.72rem;
-    color: var(--muted);
-    position: relative;
-}
-
-.calendar-mini__day--outside {
-    /* No background fill (vs. a filled --surface-muted cell) is enough visual
-       distinction; fading text via opacity would fail contrast (see the
-       .calendar__day--outside comment above for why). */
-    background: transparent;
-}
-
-.calendar-mini__day--active {
-    background: var(--accent);
-    color: var(--accent-ink);
-    font-weight: 700;
-}
-
-.calendar-mini__day--today:not(.calendar-mini__day--active) {
-    border: 1px solid var(--accent);
-}
-
 /* ---------------------------------------------------------------- */
 /* Settings / theme toggle                                            */
 /* ---------------------------------------------------------------- */
@@ -879,6 +920,42 @@
     margin: 0 0 0.9rem;
     color: var(--muted);
     font-size: 0.88rem;
+}
+
+.profile-form {
+    display: grid;
+    gap: var(--space-4);
+}
+
+.profile-form__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--space-3) var(--space-4);
+}
+
+.profile-form select {
+    padding: 0.55rem 0.7rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+}
+
+.profile-form__suggest {
+    align-self: flex-start;
+}
+
+.profile-form__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.profile-form__status {
+    color: var(--muted);
+    font-size: 0.82rem;
 }
 
 .theme-toggle {
@@ -1220,6 +1297,141 @@
     top: var(--space-4);
 }
 
+/* Two charts side by side on wide screens, stacked on narrow ones. */
+.dashboard-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+    align-items: stretch;
+}
+
+.dashboard-pair > .card + .card {
+    margin-top: 0;
+}
+
+@media (max-width: 960px) {
+    .dashboard-pair {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Section switcher under the dashboard header: a larger sibling of .chart-tabs. */
+.dashboard-tabs {
+    display: inline-flex;
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 0.2rem;
+    gap: 0.2rem;
+    margin-bottom: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+}
+
+.dashboard-tab {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 650;
+    padding: 0.45rem 1.1rem;
+    border-radius: calc(var(--radius-md) - 0.2rem);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 140ms ease, color 140ms ease;
+}
+
+.dashboard-tab:hover {
+    color: var(--ink);
+}
+
+.dashboard-tab.is-active {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow-sm);
+}
+
+.chart-tabs--wrap {
+    flex-wrap: wrap;
+    margin-bottom: var(--space-3);
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
+/* Interval session strip: bar width = duration, height = speed. */
+.session-strip__bar--work {
+    fill: var(--chart-4);
+}
+
+.session-strip__bar--recovery {
+    fill: var(--chart-1);
+    fill-opacity: 0.45;
+}
+
+.session-strip__bar--warmup,
+.session-strip__bar--cooldown {
+    fill: var(--muted);
+    fill-opacity: 0.35;
+}
+
+.session-strip__bar.is-untrusted {
+    fill-opacity: 0.35;
+    stroke: var(--chart-4);
+    stroke-dasharray: 3 2;
+}
+
+.session-table {
+    margin-top: var(--space-3);
+}
+
+.session-table td {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.session-table small {
+    color: var(--muted);
+    font-size: 0.72rem;
+}
+
+.session-table tr.is-selected td {
+    background: var(--accent-soft);
+}
+
+.session-table__select {
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    font-weight: 600;
+    color: var(--accent);
+    cursor: pointer;
+    text-align: left;
+    white-space: normal;
+    min-width: 11rem;
+}
+
+.session-table__select:hover {
+    text-decoration: underline;
+}
+
+.session-table__flag {
+    color: var(--warning) !important;
+}
+
+.session-table__fade--positive {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.session-table__fade--negative {
+    color: var(--warning);
+    font-weight: 600;
+}
+
 .plan-compare {
     display: grid;
     gap: 0.35rem;
@@ -1494,79 +1706,47 @@
     flex-shrink: 0;
 }
 
-/* Recent trainings list */
+/* Race predictor */
 
-.activity-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 0.3rem;
-}
-
-.activity-row {
+.race-row {
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    padding: 0.6rem 0.7rem;
+    padding: 0.55rem 0.6rem;
     border-radius: var(--radius-md);
-    border: 1px solid transparent;
-    text-decoration: none;
-    color: inherit;
     min-width: 0;
-    transition: background 140ms ease, border-color 140ms ease;
 }
 
-.activity-row:hover {
+.race-row + .race-row {
+    border-top: 1px solid var(--border);
+}
+
+.race-row__chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.3rem;
+}
+
+.race-hint {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
     background: var(--surface-muted);
-    border-color: var(--border);
+    color: var(--ink-secondary);
+    font-size: 0.88rem;
 }
 
-.activity-row__marker {
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 999px;
-    background: var(--accent);
-    flex-shrink: 0;
-}
-
-.activity-row__meta {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    flex: 1;
-}
-
-.activity-row__meta strong {
-    font-size: 0.9rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.activity-row__meta small {
-    font-size: 0.74rem;
+.race-footnote {
+    margin: var(--space-3) 0 0;
     color: var(--muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-size: 0.8rem;
+    max-width: 68ch;
 }
 
-.activity-row__stats {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    flex-shrink: 0;
-}
-
-.activity-row__stats strong {
-    font-size: 0.9rem;
-    font-variant-numeric: tabular-nums;
-}
-
-.activity-row__stats small {
-    font-size: 0.74rem;
-    color: var(--muted);
+.dashboard-stack > .race-footnote {
+    margin-top: 0;
 }
 
 /* ---------------------------------------------------------------- */
@@ -2024,6 +2204,10 @@ button.week-agenda__entry--completed {
         display: none;
     }
 
+    .sidebar__toggle {
+        display: none;
+    }
+
     .app-content {
         max-height: none;
         padding: 1.5rem;
@@ -2093,4 +2277,1103 @@ button.week-agenda__entry--completed {
         width: 100%;
         justify-content: flex-start;
     }
+}
+
+/* ---------------------------------------------------------------- */
+/* Training plans                                                    */
+/* ---------------------------------------------------------------- */
+
+.plan-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+}
+
+.plan-toolbar .chip {
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.plan-toolbar .chip:hover {
+    border-color: var(--border-strong);
+}
+
+.plan-toolbar .chip--active {
+    border-color: transparent;
+    background: var(--accent);
+    color: var(--accent-ink);
+}
+
+.chip__count {
+    margin-left: 0.4rem;
+    opacity: 0.75;
+    font-weight: 700;
+}
+
+.plan-list {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.plan-card {
+    display: flex;
+    gap: 1.25rem;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.plan-card__main {
+    flex: 1 1 340px;
+    min-width: 0;
+}
+
+.plan-card__heading {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.plan-card__title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.plan-card__title:hover {
+    color: var(--accent);
+}
+
+.plan-card__description {
+    margin: 0.35rem 0 0;
+    color: var(--ink-secondary);
+}
+
+.plan-card__reasoning {
+    margin: 0.4rem 0 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.plan-card__meta {
+    list-style: none;
+    display: flex;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.plan-card__meta strong {
+    color: var(--ink);
+}
+
+.plan-card__actions {
+    display: flex;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.plan-note-card {
+    margin-top: 1rem;
+}
+
+.plan-note-card .card__note {
+    margin: 0;
+}
+
+/* Composer / import */
+
+.plan-importer {
+    border: 1px dashed var(--border-strong);
+    border-radius: 8px;
+    padding: 0.6rem 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.plan-importer summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.plan-importer__hint {
+    margin: 0.5rem 0;
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+
+.plan-importer__field {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.78rem;
+}
+
+.composer-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.8rem;
+}
+
+.composer-grid .form-field--wide {
+    grid-column: 1 / -1;
+}
+
+.composer-sessions {
+    margin-top: 1.2rem;
+}
+
+.composer-sessions__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.composer-sessions__header h3 {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.composer-sessions__hint {
+    margin: 0.5rem 0 0;
+    font-size: 0.78rem;
+    color: var(--muted);
+}
+
+.plan-session-row {
+    display: grid;
+    grid-template-columns: 24px 44px 74px 92px 1fr 64px 64px 96px 28px;
+    gap: 0.4rem;
+    align-items: center;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.plan-session-row input,
+.plan-session-row select {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 0.8rem;
+}
+
+.plan-session-row__index {
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+.plan-session-row__remove {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 1;
+    padding: 0.2rem;
+    border-radius: 4px;
+}
+
+.plan-session-row__remove:hover:not(:disabled) {
+    color: var(--danger);
+    background: var(--danger-soft);
+}
+
+.plan-session-row__remove:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+/* Detail page */
+
+.page-header__actions-inline {
+    display: flex;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.plan-reasoning {
+    margin: 0;
+    white-space: pre-wrap;
+    line-height: 1.55;
+}
+
+.plan-reasoning__meta {
+    margin: 0.75rem 0 0;
+    font-size: 0.78rem;
+    color: var(--muted);
+}
+
+.plan-sessions th,
+.plan-sessions td {
+    font-size: 0.82rem;
+}
+
+.plan-sessions td strong {
+    color: var(--ink);
+}
+
+.plan-sessions__week td {
+    background: var(--surface-muted);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--accent-strong);
+    border-top: 1px solid var(--border-strong);
+}
+
+.plan-sessions__desc {
+    color: var(--muted);
+}
+
+.plan-sessions__notes {
+    color: var(--muted);
+    max-width: 260px;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+
+@media (max-width: 900px) {
+    .composer-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .plan-session-row {
+        grid-template-columns: 24px 44px 74px 92px 1fr 28px;
+    }
+
+    .plan-session-row__num,
+    .plan-session-row__intensity {
+        display: none;
+    }
+}
+
+/* ---------------------------------------------------------------- */
+/* Workout / interval editor                                         */
+/* ---------------------------------------------------------------- */
+
+.workout-panel {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+}
+
+.workout-panel__head,
+.workout-panel__toolbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.workout-panel__toolbar {
+    justify-content: flex-start;
+    margin-top: 0.75rem;
+}
+
+.workout-panel__type select,
+.workout-panel__kind select,
+.interval-table select,
+.interval-table input {
+    padding: 0.35rem 0.5rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 0.85rem;
+}
+
+.workout-panel__actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.workout-panel__summary {
+    margin-left: auto;
+    font-size: 0.88rem;
+    color: var(--ink-secondary);
+}
+
+.workout-panel__note {
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin: 0.75rem 0 0;
+}
+
+.workout-panel__error {
+    color: var(--danger);
+    background: var(--danger-soft);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    margin: 0.75rem 0 0;
+}
+
+.workout-panel__table {
+    overflow-x: auto;
+}
+
+.interval-table tbody tr {
+    cursor: pointer;
+}
+
+.interval-table tbody tr.is-selected {
+    background: var(--accent-soft);
+}
+
+.interval-table tbody tr.has-problem {
+    box-shadow: inset 3px 0 0 var(--danger);
+}
+
+.interval-table th,
+.interval-table td {
+    padding: 0.45rem 0.35rem;
+}
+
+.interval-table td {
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.interval-table small {
+    display: block;
+    color: var(--muted);
+    font-size: 0.72rem;
+}
+
+.interval-table__derived {
+    font-variant-numeric: tabular-nums;
+}
+
+.interval-table small.interval-table__problem {
+    color: var(--danger);
+}
+
+.iv-timeline {
+    margin-top: 0.75rem;
+}
+
+.iv-timeline__bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.iv-timeline__hint {
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.iv-timeline__svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    /* Horizontal drags edit intervals; vertical swipes still scroll the page. */
+    touch-action: pan-y;
+    cursor: crosshair;
+    user-select: none;
+}
+
+.iv-segmented {
+    display: inline-flex;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.iv-segmented button {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.82rem;
+    border: 0;
+    background: var(--surface);
+    color: var(--ink-secondary);
+    cursor: pointer;
+}
+
+.iv-segmented button.is-active {
+    background: var(--accent);
+    color: var(--accent-ink);
+}
+
+.iv-lane {
+    fill: var(--surface);
+    stroke: var(--border);
+}
+
+.iv-profile {
+    fill: none;
+    stroke: var(--chart-2);
+    stroke-width: 1.5;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.iv-tick {
+    stroke: var(--chart-grid);
+}
+
+/* Interval bands: shared by the chart overlay and the editable timeline. */
+.iv-band--work {
+    --iv-color: var(--chart-4);
+    --iv-opacity: 0.28;
+}
+
+.iv-band--recovery {
+    --iv-color: var(--chart-1);
+    --iv-opacity: 0.18;
+}
+
+.iv-band--warmup,
+.iv-band--cooldown {
+    --iv-color: var(--muted);
+    --iv-opacity: 0.16;
+}
+
+.iv-band__fill {
+    fill: var(--iv-color);
+    fill-opacity: var(--iv-opacity);
+}
+
+.iv-band__edge {
+    stroke: var(--iv-color);
+    stroke-width: 1.25;
+}
+
+.iv-band__label {
+    fill: var(--ink);
+}
+
+.iv-band__body {
+    cursor: grab;
+    stroke: var(--iv-color);
+    stroke-opacity: 0.9;
+    stroke-width: 1;
+}
+
+.iv-band:focus {
+    outline: none;
+}
+
+.iv-band:focus-visible .iv-band__body,
+.iv-band.is-selected .iv-band__body {
+    stroke: var(--ink);
+    stroke-width: 2;
+}
+
+.iv-band.is-selected .iv-band__fill {
+    fill-opacity: calc(var(--iv-opacity) + 0.15);
+}
+
+.iv-handle {
+    fill: var(--iv-color);
+    fill-opacity: 0.55;
+    cursor: ew-resize;
+}
+
+.iv-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    font-size: 0.8rem;
+    color: var(--ink-secondary);
+}
+
+.iv-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.iv-swatch {
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 2px;
+}
+
+.iv-swatch--work {
+    background: var(--chart-4);
+}
+
+.iv-swatch--recovery {
+    background: var(--chart-1);
+}
+
+.iv-swatch--warmup,
+.iv-swatch--cooldown {
+    background: var(--muted);
+}
+
+.interval-table__handle {
+    width: 1.75rem;
+    padding-right: 0 !important;
+}
+
+.interval-handle-btn {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 0.25rem 0.2rem;
+    border-radius: var(--radius-sm);
+    cursor: grab;
+    touch-action: none;
+}
+
+.interval-handle-btn:hover,
+.interval-handle-btn:focus-visible {
+    color: var(--ink);
+    background: var(--surface-muted);
+}
+
+.interval-handle-btn:active {
+    cursor: grabbing;
+}
+
+.interval-table tbody tr.is-dragging {
+    opacity: 0.45;
+}
+
+.interval-table tbody tr.is-drop-before {
+    box-shadow: inset 0 2px 0 var(--accent);
+}
+
+.interval-table tbody tr.is-drop-after {
+    box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* ---------------------------------------------------------------- */
+/* Training page                                                     */
+/* ---------------------------------------------------------------- */
+
+.track-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    transition: opacity 120ms ease;
+}
+
+.track-page.is-switching {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+/* The page is a stack of its own sections, so the generic card spacing would double up. */
+.track-page > .card + .card {
+    margin-top: 0;
+}
+
+.track-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.track-header__title {
+    margin: 0.4rem 0 0;
+}
+
+.track-header__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 0.35rem 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.track-header__tags {
+    color: var(--accent);
+}
+
+.track-header__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.track-header__buttons,
+.track-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.track-nav__btn {
+    text-decoration: none;
+}
+
+.track-nav__btn.is-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.track-nav__pos {
+    min-width: 3.6rem;
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.track-edit {
+    display: grid;
+    gap: 0.75rem;
+    max-width: 32rem;
+}
+
+.track-description {
+    margin: 0;
+    color: var(--ink-secondary);
+}
+
+.track-section__title {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+}
+
+.track-section__empty {
+    margin: 0;
+    color: var(--muted);
+}
+
+.track-metrics {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.track-view__canvas {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    height: 170px; /* the same drawing height as the chart; the frame supplies the border */
+}
+
+.track-view__dot {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+}
+
+.track-view__dot--start {
+    background: var(--success);
+}
+
+.track-view__dot--end {
+    background: var(--danger);
+}
+
+/* The first section inside the charts card shouldn't carry its own top rule. */
+.track-page .card > .workout-panel {
+    margin-top: 1.25rem;
+}
+
+/* ---------------------------------------------------------------- */
+/* Compact density for the training page                              */
+/* ---------------------------------------------------------------- */
+
+.track-page {
+    gap: var(--space-3);
+}
+
+.track-page > .card {
+    padding: 0.7rem 0.9rem;
+}
+
+.track-header {
+    align-items: center;
+    gap: 0.5rem 1rem;
+}
+
+.track-header__main {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+    min-width: 0;
+}
+
+.track-header__back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--ink-secondary);
+    text-decoration: none;
+}
+
+.track-header__back:hover {
+    background: var(--surface-muted);
+    color: var(--ink);
+}
+
+.track-header__title {
+    margin: 0;
+    font-size: 1.3rem;
+    line-height: 1.2;
+}
+
+.track-header__meta {
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.track-header__meta .badge {
+    padding: 0.12rem 0.5rem;
+    font-size: 0.72rem;
+}
+
+.track-description {
+    margin: -0.25rem 0 0;
+    font-size: 0.88rem;
+}
+
+/* Metrics as a slim strip of five tiles. */
+.track-metrics {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.track-metrics .metric-card {
+    padding: 0.45rem 0.7rem;
+    gap: 0.05rem;
+}
+
+.track-metrics .metric-card:hover {
+    transform: none;
+}
+
+.track-metrics .metric-card__label {
+    font-size: 0.62rem;
+}
+
+.track-metrics .metric-card__value {
+    font-size: 1.1rem;
+}
+
+@media (max-width: 760px) {
+    .track-metrics {
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    }
+}
+
+/* Time series chart */
+.ts-chart__head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    margin-bottom: 0.4rem;
+}
+
+.ts-chart__title {
+    font-size: 0.9rem;
+}
+
+.ts-chart__title small {
+    font-weight: 400;
+    color: var(--muted);
+}
+
+.ts-chart__legend {
+    margin: 0;
+}
+
+.ts-chart__metrics {
+    display: flex;
+    gap: 0.3rem;
+    margin-left: auto;
+}
+
+.ts-chart__metrics button {
+    padding: 0.15rem 0.5rem;
+    font-size: 0.76rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--ink-secondary);
+    cursor: pointer;
+}
+
+.ts-chart__metrics button.is-active {
+    background: var(--chart-2);
+    border-color: var(--chart-2);
+    color: #ffffff;
+}
+
+.ts-chart__box {
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.ts-chart__box--track {
+    display: block;
+}
+
+.ts-chart--empty p {
+    margin: 0;
+    padding: 1rem;
+    text-align: center;
+    color: var(--muted);
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+/* Interval editor */
+.track-page .card > .workout-panel {
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+}
+
+.workout-panel__head {
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.4rem 0.75rem;
+}
+
+.workout-panel__head .form-field {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.workout-panel__head .form-field label {
+    margin: 0;
+}
+
+.workout-panel__actions {
+    margin-left: auto;
+}
+
+.workout-panel__summary {
+    font-size: 0.82rem;
+    margin-left: 0;
+}
+
+.workout-panel__note {
+    margin: 0.4rem 0 0;
+    font-size: 0.8rem;
+}
+
+.workout-panel__note--small {
+    font-size: 0.72rem;
+}
+
+.workout-panel__error {
+    margin-top: 0.4rem;
+    padding: 0.3rem 0.6rem;
+}
+
+.iv-timeline {
+    margin-top: 0.5rem;
+}
+
+.iv-timeline__bar {
+    margin-bottom: 0.3rem;
+    gap: 0.5rem;
+}
+
+.iv-segmented button {
+    padding: 0.15rem 0.6rem;
+    font-size: 0.76rem;
+}
+
+.iv-timeline__svg {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+}
+
+.iv-timeline__hint {
+    font-size: 0.72rem;
+}
+
+.interval-table {
+    margin-top: 0.4rem;
+    font-size: 0.82rem;
+}
+
+.interval-table th,
+.interval-table td {
+    padding: 0.2rem 0.3rem;
+}
+
+.interval-table select,
+.interval-table input {
+    padding: 0.18rem 0.4rem;
+    font-size: 0.8rem;
+}
+
+.interval-table small.interval-table__unit {
+    display: inline;
+    margin-left: 0.2rem;
+}
+
+.interval-table td small {
+    font-size: 0.68rem;
+    line-height: 1.2;
+}
+
+.workout-panel__type select,
+.workout-panel__kind select {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.82rem;
+}
+
+.workout-panel__head .btn-sm {
+    padding-block: 0.25rem;
+}
+
+.interval-handle-btn {
+    padding: 0.1rem;
+}
+
+/* Run insights (non-interval workouts) */
+.run-insights {
+    display: grid;
+    gap: 1.25rem;
+    margin-top: 0.75rem;
+}
+.run-insights h3 {
+    margin: 0 0 0.35rem;
+    font-size: 0.95rem;
+}
+.run-insights table small {
+    display: block;
+    opacity: 0.7;
+}
+.run-insights__bar {
+    display: block;
+    height: 0.6rem;
+    min-width: 2px;
+    border-radius: 3px;
+    background: currentColor;
+    opacity: 0.55;
+}
+.run-insights__splits td:nth-child(3),
+.run-insights__zones td:nth-child(2) {
+    width: 40%;
+}
+.run-insights__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: 0.75rem;
+    margin: 0;
+}
+.run-insights__stats dt {
+    font-size: 0.8rem;
+    opacity: 0.75;
+}
+.run-insights__stats dd {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+.splits-chart__svg {
+    cursor: default;
+}
+
+.splits-chart__legend {
+    margin: 0;
+}
+
+.splits-chart__readout {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+}
+
+.splits-chart__readout strong {
+    color: var(--ink);
+}
+
+.splits-chart__swatch--pace {
+    background: var(--chart-1);
+    opacity: 0.6;
+}
+
+.splits-chart__swatch--hr {
+    width: 0.9rem;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--chart-3);
+}
+
+.splits-chart__band:focus {
+    outline: none;
+}
+
+.splits-chart__hit {
+    fill: transparent;
+}
+
+.splits-chart__band.is-selected .splits-chart__hit {
+    fill: var(--ink);
+    fill-opacity: 0.04;
+}
+
+.splits-chart__bar {
+    fill: var(--chart-1);
+    fill-opacity: 0.22;
+    stroke: var(--chart-1);
+    stroke-opacity: 0.7;
+    stroke-width: 1;
+    transition: fill-opacity 120ms ease;
+}
+
+.splits-chart__band.is-fastest .splits-chart__bar {
+    fill-opacity: 0.38;
+}
+
+.splits-chart__band.is-selected .splits-chart__bar,
+.splits-chart__band:focus-visible .splits-chart__bar {
+    fill-opacity: 0.5;
+    stroke-opacity: 1;
+}
+
+.splits-chart__hr {
+    fill: none;
+    stroke: var(--chart-3);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+.splits-chart__hr-dot {
+    fill: var(--surface);
+    stroke: var(--chart-3);
+    stroke-width: 1.5;
+    pointer-events: none;
 }

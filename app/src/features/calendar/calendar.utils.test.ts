@@ -104,9 +104,8 @@ describe("addWeeks", () => {
 
 describe("formatWeekRangeLabel", () => {
     it("renders a human readable week range", () => {
-        const label = formatWeekRangeLabel(new Date(2026, 8, 7));
-        expect(label).toContain("2026");
-        expect(label).toContain("–");
+        expect(formatWeekRangeLabel(new Date(2026, 8, 7))).toBe("07/09 – 13/09/2026");
+        expect(formatWeekRangeLabel(new Date(2026, 8, 28))).toBe("28/09 – 04/10/2026");
     });
 });
 

@@ -12,7 +12,13 @@ export const pickVisibleLabelIndices = (count: number, availableWidth: number, m
 
     const step = Math.ceil(count / maxLabels);
     const indices = new Set<number>();
-    for (let i = 0; i < count; i += step) indices.add(i);
+    let lastStepped = 0;
+    for (let i = 0; i < count; i += step) {
+        indices.add(i);
+        lastStepped = i;
+    }
+    // The last label is always shown; drop the stepped one before it when it would sit too close and overlap.
+    if (lastStepped !== 0 && count - 1 - lastStepped < step) indices.delete(lastStepped);
     indices.add(count - 1);
     return indices;
 };

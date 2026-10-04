@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -13,8 +14,10 @@ import (
 	"example.com/app-template/server/internal/activities"
 	"example.com/app-template/server/internal/config"
 	"example.com/app-template/server/internal/planning"
+	"example.com/app-template/server/internal/profile"
 	"example.com/app-template/server/internal/sqlite"
 	"example.com/app-template/server/internal/storage"
+	"example.com/app-template/server/internal/trainingplan"
 )
 
 // NewServer composes the API routes and HTTP middleware used by the application.
@@ -26,6 +29,8 @@ func NewServer(cfg config.Config, logger *slog.Logger) *http.Server {
 		if err == nil && db != nil {
 			_ = activities.EnsureTable(context.Background(), db)
 			_ = planning.EnsureTables(context.Background(), db)
+			_ = trainingplan.EnsureTables(context.Background(), db)
+			_ = profile.EnsureTables(context.Background(), db)
 		}
 	}
 
@@ -39,6 +44,9 @@ func NewServer(cfg config.Config, logger *slog.Logger) *http.Server {
 	registerActivityRoutes(mux, db, store)
 	registerAnalyticsRoutes(mux, db)
 	registerPlanningRoutes(mux, db)
+	registerProfileRoutes(mux, db)
+	registerTrainingPlanRoutes(mux, db)
+	registerMCPRoutes(mux, db, store)
 
 	return &http.Server{
 		Addr:              cfg.HTTP.Address,
@@ -102,13 +110,16 @@ func registerActivityRoutes(mux *http.ServeMux, db *sql.DB, store storage.Storag
 			}
 		}
 
+		// The predictor degrades to the best-effort method when the profile is missing.
+		athlete, _ := profile.Get(r.Context(), db)
+		hrBounds := activities.HeartRateBounds{Resting: athlete.RestingHeartRate, Max: athlete.MaxHeartRate}
+
 		WriteJSON(w, http.StatusOK, map[string]any{
 			"totalDistance":        totalDistance,
 			"totalElevation":       totalElevation,
 			"totalDuration":        totalDuration,
 			"trainingCount":        len(records),
 			"avgHeartRate":         avgHR,
-			"recentActivities":     records,
 			"currentWeekDistance":  currentWeekDistance,
 			"currentWeekSessions":  currentWeekSessions,
 			"currentMonthDistance": currentMonthDistance,
@@ -121,6 +132,9 @@ func registerActivityRoutes(mux *http.ServeMux, db *sql.DB, store storage.Storag
 			"personalBests":        activities.PersonalBests(records),
 			"trainingLoad":         activities.ComputeTrainingLoad(records, now),
 			"goals":                goals,
+			"endurance":            activities.ComputeEnduranceAnalytics(records, 12, now),
+			"intervals":            activities.ComputeIntervalAnalytics(records, 12, now),
+			"racePredictor":        activities.ComputeRacePredictor(records, hrBounds, now),
 		})
 	})
 
@@ -179,6 +193,8 @@ func registerActivityRoutes(mux *http.ServeMux, db *sql.DB, store storage.Storag
 		parsed.Name = rec.Name
 		parsed.Description = rec.Description
 		parsed.Tags = rec.Tags
+		parsed.WorkoutType = rec.WorkoutType
+		parsed.Intervals = rec.Intervals
 		if rec.ElevationGain > 0 {
 			parsed.ElevationGain = rec.ElevationGain
 		}
@@ -214,6 +230,32 @@ func registerActivityRoutes(mux *http.ServeMux, db *sql.DB, store storage.Storag
 		rec, err := activities.GetFileRecord(r.Context(), db, id)
 		if err != nil {
 			WriteError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		WriteJSON(w, http.StatusOK, rec)
+	})
+
+	// Mark a training's workout type and set its interval segments
+	mux.HandleFunc("PUT /api/activities/{id}/workout", func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		var req struct {
+			WorkoutType string                `json:"workoutType"`
+			Intervals   []activities.Interval `json:"intervals"`
+		}
+		if !DecodeJSON(w, r, &req) {
+			return
+		}
+		if db == nil {
+			WriteError(w, http.StatusInternalServerError, "database not available")
+			return
+		}
+		rec, err := activities.SaveWorkout(r.Context(), db, store, id, req.WorkoutType, req.Intervals)
+		if err != nil {
+			status := http.StatusNotFound
+			if errors.Is(err, activities.ErrInvalidWorkout) {
+				status = http.StatusBadRequest
+			}
+			WriteError(w, status, err.Error())
 			return
 		}
 		WriteJSON(w, http.StatusOK, rec)

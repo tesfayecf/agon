@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, type KeyboardEvent, type ReactElement } from "react";
 
 import type { ActivityFile } from "../activity/activity.service";
-import { formatDistance } from "../../shared/utils/format";
+import { formatDate, formatDistance } from "../../shared/utils/format";
 import { getYearMatrix, getWeekdayLabels, toDateKey, type YearHeatmapWeek } from "./calendar.utils";
 
 interface CalendarYearHeatmapProps {
@@ -167,7 +167,7 @@ export const CalendarYearHeatmap = ({ year, activitiesByDate, onSelectDay }: Cal
                                     }
                                     const totals = totalsByKey.get(day.key);
                                     const level = levelFor(totals?.distanceMeters ?? 0, maxDistance);
-                                    const dateLabel = day.date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+                                    const dateLabel = formatDate(day.date);
                                     const detail =
                                         totals !== undefined && totals.sessionCount > 0
                                             ? `${formatDistance(totals.distanceMeters)} · ${totals.sessionCount} session${totals.sessionCount === 1 ? "" : "s"}`

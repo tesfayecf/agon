@@ -7,6 +7,8 @@ import { CalendarPage } from "../features/calendar/CalendarPage";
 import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { SchedulePage } from "../features/schedule/SchedulePage";
 import { SettingsPage } from "../features/settings/SettingsPage";
+import { TrainingPlansPage } from "../features/trainingplans/TrainingPlansPage";
+import { TrainingPlanDetailPage } from "../features/trainingplans/TrainingPlanDetailPage";
 import { AppRouteError } from "./AppRouteError";
 import { AppShell } from "./AppShell";
 import { NotFoundPage } from "./NotFoundPage";
@@ -36,6 +38,14 @@ export const router = createBrowserRouter([
             {
                 path: "schedule",
                 element: <SchedulePage />,
+            },
+            {
+                path: "plans",
+                element: <TrainingPlansPage />,
+            },
+            {
+                path: "plans/:id",
+                element: <TrainingPlanDetailPage />,
             },
             {
                 path: "settings",

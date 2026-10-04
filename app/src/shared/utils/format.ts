@@ -39,9 +39,34 @@ export const formatTime = (seconds?: number): string => {
     return `${minutes}:${String(secs).padStart(2, "0")}`;
 };
 
-export const formatDate = (value?: string): string => {
-    if (value === undefined || value === "") return "—";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "—";
-    return date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+const pad2 = (n: number): string => String(n).padStart(2, "0");
+
+/** Date-only strings ("2026-10-06") are calendar days, so parse them as local time rather than UTC. */
+const toDate = (value: Date | string | undefined): Date | null => {
+    if (value === undefined || value === "") return null;
+    if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+    const dayOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    const date = dayOnly ? new Date(Number(dayOnly[1]), Number(dayOnly[2]) - 1, Number(dayOnly[3])) : new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+};
+
+/** DD/MM/YYYY, regardless of the browser's locale. */
+export const formatDate = (value?: Date | string): string => {
+    const date = toDate(value);
+    if (date === null) return "—";
+    return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
+};
+
+/** DD/MM, for compact labels where the year is implied. */
+export const formatDayMonth = (value?: Date | string): string => {
+    const date = toDate(value);
+    if (date === null) return "—";
+    return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}`;
+};
+
+/** DD/MM/YYYY HH:mm (24-hour). */
+export const formatDateTime = (value?: Date | string): string => {
+    const date = toDate(value);
+    if (date === null) return "—";
+    return `${formatDate(date)} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
 };

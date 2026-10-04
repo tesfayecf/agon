@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import type { PaceHeartRatePoint } from "../activity/activity.service";
-import { computeEfficiencyInsight, deltaTrend, monthLabel, round1, weekLabel } from "./dashboard.utils";
+import { pickVisibleLabelIndices } from "./charts/chart-layout";
+import { computeEfficiencyInsight, defaultRepDuration, deltaTrend, describeFade, describeVsBest, formatPercent, formatRatio, monthLabel, paceChange, round1, weekLabel } from "./dashboard.utils";
 
 const makePoint = (paceSecondsPerKm: number, avgHeartRate: number): PaceHeartRatePoint => ({
     date: "2026-01-01T00:00:00Z",
@@ -14,8 +15,7 @@ const makePoint = (paceSecondsPerKm: number, avgHeartRate: number): PaceHeartRat
 
 describe("weekLabel", () => {
     it("formats a week-start date key as a short day/month label", () => {
-        expect(weekLabel("2026-09-07")).toContain("Sep");
-        expect(weekLabel("2026-09-07")).toContain("7");
+        expect(weekLabel("2026-09-07")).toBe("07/09");
     });
 });
 
@@ -101,5 +101,93 @@ describe("computeEfficiencyInsight", () => {
         const points = Array.from({ length: 8 }, () => makePoint(300, 155));
         const insight = computeEfficiencyInsight(points);
         expect(insight?.changePercent).toBeCloseTo(0, 5);
+    });
+});
+
+describe("describeFade", () => {
+    it("reports a faster last rep as a positive outcome", () => {
+        expect(describeFade(-8.4)).toEqual({ label: "8% faster", tone: "positive" });
+    });
+
+    it("reports a slower last rep as a negative outcome", () => {
+        expect(describeFade(5)).toEqual({ label: "5% slower", tone: "negative" });
+    });
+
+    it("treats tiny changes as even pacing and missing data as unknown", () => {
+        expect(describeFade(0.4)).toEqual({ label: "Even", tone: "flat" });
+        expect(describeFade(null)).toBeNull();
+    });
+});
+
+describe("defaultRepDuration", () => {
+    it("picks the rep length trained in the most sessions, the shorter one on ties", () => {
+        expect(
+            defaultRepDuration([
+                { durationSeconds: 60, sessionCount: 9 },
+                { durationSeconds: 120, sessionCount: 9 },
+                { durationSeconds: 300, sessionCount: 4 },
+            ]),
+        ).toBe(60);
+        expect(defaultRepDuration([])).toBeNull();
+    });
+});
+
+describe("paceChange", () => {
+    it("returns last minus first valid pace", () => {
+        expect(paceChange([240, 0, 230, 225])).toBe(-15);
+    });
+
+    it("needs at least two valid paces", () => {
+        expect(paceChange([240])).toBeNull();
+    });
+});
+
+describe("formatRatio / formatPercent", () => {
+    it("formats work:rest ratios and shares", () => {
+        expect(formatRatio(1.5)).toBe("1.5 : 1");
+        expect(formatRatio(0)).toBe("—");
+        expect(formatPercent(0.114)).toBe("11%");
+    });
+});
+
+describe("pickVisibleLabelIndices", () => {
+    it("keeps every label when they fit", () => {
+        expect([...pickVisibleLabelIndices(4, 400, 40)]).toEqual([0, 1, 2, 3]);
+    });
+
+    it("never places a stepped label right next to the forced last label", () => {
+        const shown = [...pickVisibleLabelIndices(12, 200, 40)].sort((a, b) => a - b);
+        expect(shown[0]).toBe(0);
+        expect(shown[shown.length - 1]).toBe(11);
+        for (let i = 1; i < shown.length; i++) {
+            expect((shown[i] ?? 0) - (shown[i - 1] ?? 0)).toBeGreaterThanOrEqual(3);
+        }
+    });
+});
+
+describe("describeVsBest", () => {
+    const prediction = (predictedSeconds: number, personalBestSeconds: number) => ({
+        label: "5 km",
+        distanceMeters: 5000,
+        predictedSeconds,
+        paceSecondsPerKm: predictedSeconds / 5,
+        personalBestSeconds,
+        isExtrapolated: false,
+    });
+
+    it("returns null without a personal best", () => {
+        expect(describeVsBest(prediction(1200, 0))).toBeNull();
+    });
+
+    it("describes a prediction faster than the PB as positive", () => {
+        expect(describeVsBest(prediction(1200, 1242))).toEqual({ label: "0:42 under PB", tone: "positive" });
+    });
+
+    it("describes a prediction slower than the PB as negative", () => {
+        expect(describeVsBest(prediction(1265, 1200))).toEqual({ label: "1:05 over PB", tone: "negative" });
+    });
+
+    it("treats a sub-second difference as matching", () => {
+        expect(describeVsBest(prediction(1200, 1200.4))).toEqual({ label: "Matches PB", tone: "flat" });
     });
 });

@@ -1,10 +1,25 @@
-import { useEffect, useRef, type ReactElement } from "react";
-import type { ActivityRecord } from "./activity.service";
+import { useEffect, useMemo, useRef, type ReactElement } from "react";
+import type { ActivityRecord, IntervalKind } from "./activity.service";
+import { useElementWidth } from "../../shared/hooks/useElementWidth";
+import { elapsedSeconds, type ResolvedInterval } from "./intervals";
 import { useTheme } from "../../shared/theme/ThemeContext";
 
 interface TrackCanvasViewProps {
     records: ActivityRecord[];
+    /** Resolved intervals, drawn over the route. */
+    intervals?: ResolvedInterval[];
+    /** Index of the interval to emphasize. */
+    selected?: number | null;
 }
+
+const KIND_COLOR: Record<IntervalKind, string> = {
+    work: "--chart-4",
+    recovery: "--chart-1",
+    warmup: "--muted",
+    cooldown: "--muted",
+};
+
+const CANVAS_H = 170; // matches the time series chart, so switching views does not move the page
 
 /** Canvas 2D drawing doesn't go through the CSS cascade, so var(--x) references must be
  * resolved to their computed value before being handed to ctx.fillStyle/strokeStyle. */
@@ -13,13 +28,20 @@ const resolveCssVar = (name: string): string => {
     return value === "" ? "#64748b" : value;
 };
 
-export const TrackCanvasView = ({ records }: TrackCanvasViewProps): ReactElement => {
+export const TrackCanvasView = ({ records, intervals = [], selected = null }: TrackCanvasViewProps): ReactElement => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const { ref: wrapRef, width: boxWidth } = useElementWidth<HTMLDivElement>(650);
     const { theme } = useTheme();
 
-    const validPoints = records.filter(
-        (r): r is ActivityRecord & { latitude: number; longitude: number } =>
-            typeof r.latitude === "number" && !isNaN(r.latitude) && typeof r.longitude === "number" && !isNaN(r.longitude),
+    // GPS fixes with their elapsed time, which is how intervals are addressed.
+    const validPoints = useMemo(
+        () =>
+            elapsedSeconds(records).flatMap(({ t, rec }) =>
+                typeof rec.latitude === "number" && !isNaN(rec.latitude) && typeof rec.longitude === "number" && !isNaN(rec.longitude)
+                    ? [{ latitude: rec.latitude, longitude: rec.longitude, t }]
+                    : [],
+            ),
+        [records],
     );
 
     useEffect(() => {
@@ -33,8 +55,13 @@ export const TrackCanvasView = ({ records }: TrackCanvasViewProps): ReactElement
             return;
         }
 
-        const width = canvas.width;
-        const height = canvas.height;
+        // Draw at the real pixel size (and device pixel ratio) so the map stays crisp at a fixed height.
+        const width = Math.max(200, Math.floor(boxWidth) - 2); // minus the canvas border
+        const height = CANVAS_H;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, width, height);
 
         const mutedColor = resolveCssVar("--muted");
@@ -62,6 +89,7 @@ export const TrackCanvasView = ({ records }: TrackCanvasViewProps): ReactElement
         const relPoints = validPoints.map((p) => ({
             x: (p.longitude - originLon) * metersPerDegLon,
             y: (p.latitude - originLat) * metersPerDegLat,
+            t: p.t,
         }));
 
         const firstRel = relPoints[0];
@@ -83,7 +111,7 @@ export const TrackCanvasView = ({ records }: TrackCanvasViewProps): ReactElement
 
         const trackW = Math.max(maxX - minX, 10);
         const trackH = Math.max(maxY - minY, 10);
-        const pad = 40;
+        const pad = 22;
         const availW = width - pad * 2;
         const availH = height - pad * 2;
         const scale = Math.min(availW / trackW, availH / trackH);
@@ -147,6 +175,39 @@ export const TrackCanvasView = ({ records }: TrackCanvasViewProps): ReactElement
         }
         ctx.stroke();
 
+        // Intervals over the route: the selected one gets a halo so it stands out.
+        const drawInterval = (iv: ResolvedInterval, isSelected: boolean): void => {
+            const segment = relPoints.filter((pt) => pt.t >= iv.startSeconds && pt.t <= iv.endSeconds);
+            if (segment.length < 2) return;
+            const trace = (): void => {
+                ctx.beginPath();
+                segment.forEach((pt, i) => {
+                    const px = toPx(pt);
+                    if (i === 0) ctx.moveTo(px.px, px.py);
+                    else ctx.lineTo(px.px, px.py);
+                });
+                ctx.stroke();
+            };
+            ctx.lineJoin = "round";
+            ctx.lineCap = "round";
+            if (isSelected) {
+                ctx.strokeStyle = resolveCssVar("--ink");
+                ctx.globalAlpha = 0.35;
+                ctx.lineWidth = 12;
+                trace();
+                ctx.globalAlpha = 1;
+            }
+            ctx.strokeStyle = resolveCssVar(KIND_COLOR[iv.kind]);
+            ctx.lineWidth = iv.kind === "work" ? 6 : 4.5;
+            trace();
+            ctx.lineCap = "butt";
+        };
+        intervals.forEach((iv, i) => {
+            if (iv.durationSeconds > 0 && i !== selected) drawInterval(iv, false);
+        });
+        const selectedInterval = selected === null ? undefined : intervals[selected];
+        if (selectedInterval !== undefined && selectedInterval.durationSeconds > 0) drawInterval(selectedInterval, true);
+
         // Start point (success color)
         ctx.fillStyle = startColor;
         ctx.beginPath();
@@ -162,30 +223,19 @@ export const TrackCanvasView = ({ records }: TrackCanvasViewProps): ReactElement
             ctx.arc(last.px, last.py, 6, 0, Math.PI * 2);
             ctx.fill();
         }
-    }, [validPoints, theme]);
+    }, [validPoints, intervals, selected, theme, boxWidth]);
+
+    const origin = validPoints[0];
 
     return (
-        <div style={{ margin: "1.5rem 0", textAlign: "center" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                <strong>2D Relative Track View</strong>
-                <small style={{ color: "var(--muted)" }}>
-                    Origin (0,0) @ {validPoints[0] !== undefined ? `${validPoints[0].latitude.toFixed(4)}, ${validPoints[0].longitude.toFixed(4)}` : "N/A"}
-                </small>
-            </div>
+        <div className="track-view" ref={wrapRef}>
             <canvas
                 ref={canvasRef}
-                width={650}
-                height={350}
-                style={{
-                    width: "100%",
-                    maxWidth: "650px",
-                    height: "auto",
-                    backgroundColor: "var(--surface-muted)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                }}
+                className="track-view__canvas"
+                role="img"
+                aria-label="Route of the training on a relative 2D map"
+                title={origin !== undefined ? `Origin (0,0) @ ${origin.latitude.toFixed(4)}, ${origin.longitude.toFixed(4)}` : "No GPS data"}
             />
         </div>
     );
 };
-

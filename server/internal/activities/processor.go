@@ -37,6 +37,8 @@ type ActivityFile struct {
 	Tags            string           `json:"tags"`
 	ElevationGain   float64          `json:"elevationGain"`
 	AvgHeartRate    float64          `json:"avgHeartRate"`
+	WorkoutType     string           `json:"workoutType"`
+	Intervals       []Interval       `json:"intervals"`
 }
 
 type ActivityUploadResponse struct {

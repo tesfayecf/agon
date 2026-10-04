@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicholasgriffintn/mcp-schema/main/schema.json",
+  "servers": {
+    "agon": {
+      "type": "http",
+      "url": "http://localhost:8080/api/mcp",
+      "headers": {},
+      "description": "Agon training MCP (Streamable HTTP) — read training sessions, generate training plans, manage goals and schedules. Requires the API server to be running (./cmd/agon.sh)."
+    }
+  }
+}
