@@ -1,11 +1,11 @@
 import { useMemo, useState, type ReactElement } from "react";
 
-import type { IntervalAnalytics, IntervalSession } from "../activity/activity.service";
+import type { IntervalAnalytics, IntervalSession, SessionSegment } from "../activity/activity.service";
 import { Card } from "../../shared/components/Card";
 import { MetricCard } from "../../shared/components/MetricCard";
 import { EmptyState } from "../../shared/components/StateViews";
 import { formatDate, formatDayMonth, formatDistance, formatDuration, formatHeartRate, formatPace } from "../../shared/utils/format";
-import { formatClock, formatMeters } from "../activity/intervals";
+import { formatClock, formatMeters, INTERVAL_KIND_LABELS } from "../activity/intervals";
 import { BarTrendChart } from "./charts/BarTrendChart";
 import { IntervalSessionStrip } from "./charts/IntervalSessionStrip";
 import { LineTrendChart } from "./charts/LineTrendChart";
@@ -18,6 +18,29 @@ interface IntervalsTabProps {
 /** Rep lengths need at least this many sessions before a progression line means anything. */
 const MIN_PROGRESSION_SESSIONS = 2;
 const COLLAPSED_SESSION_ROWS = 8;
+
+/**
+ * Compact inline bar strip showing the interval pattern at a glance.
+ * Each segment's width is proportional to its duration; work reps are vivid,
+ * recoveries are dim, warm-up / cool-down are barely visible — so the work/rest
+ * rhythm pops out without reading a single number.
+ */
+const MiniIntervalStrip = ({ segments }: { segments: SessionSegment[] }): ReactElement | null => {
+    if (segments.length === 0) return null;
+    const workCount = segments.filter((s) => s.kind === "work").length;
+    return (
+        <span className="iv-mini-strip" role="img" aria-label={`${workCount} work reps across ${segments.length} segments`}>
+            {segments.map((seg, i) => (
+                <span
+                    key={i}
+                    className={`iv-mini-strip__seg iv-mini-strip__seg--${seg.kind}`}
+                    style={{ flex: `${Math.max(1, seg.durationSeconds)} 0 0` }}
+                    title={`${INTERVAL_KIND_LABELS[seg.kind]} · ${formatClock(seg.durationSeconds)}`}
+                />
+            ))}
+        </span>
+    );
+};
 
 const FadeChip = ({ fadePercent }: { fadePercent: number | null }): ReactElement | null => {
     const fade = describeFade(fadePercent);
@@ -33,7 +56,7 @@ const SessionBreakdown = ({ session }: { session: IntervalSession }): ReactEleme
     let repIndex = 0;
     return (
         <Card
-            title={session.structure}
+            title={`${session.repCount} intervals · ${formatClock(session.workSeconds)} work`}
             eyebrow={`Session breakdown · ${formatDate(session.date)}`}
             accent="var(--chart-4)"
             actions={
@@ -259,7 +282,10 @@ export const IntervalsTab = ({ intervals }: IntervalsTabProps): ReactElement => 
                                                 <td>{formatDayMonth(s.date)}</td>
                                                 <td>
                                                     <button type="button" className="session-table__select" aria-pressed={isSelected} onClick={() => setSelectedId(s.activityId)}>
-                                                        {s.structure}
+                                                        <span className="iv-mini-strip-wrap">
+                                                            <MiniIntervalStrip segments={s.segments} />
+                                                            <span className="iv-mini-strip__count">{s.repCount} rep{s.repCount === 1 ? "" : "s"}</span>
+                                                        </span>
                                                     </button>
                                                 </td>
                                                 <td>{formatClock(s.workSeconds)}</td>

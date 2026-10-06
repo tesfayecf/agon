@@ -4,7 +4,7 @@ import { deleteActivityFile, fetchActivityFiles, uploadActivityFiles, type Activ
 import { PageHeader } from "../../shared/components/PageHeader";
 import { Card } from "../../shared/components/Card";
 import { LoadingState, EmptyState, ErrorState } from "../../shared/components/StateViews";
-import { formatDateTime, formatDistance, formatDuration, formatElevation } from "../../shared/utils/format";
+import { formatDate, formatDayMonth, formatDistance, formatDuration, formatElevation, formatHeartRate, formatPace } from "../../shared/utils/format";
 
 interface FilterState {
     q: string;
@@ -187,43 +187,59 @@ export const TracksPage = (): ReactElement => {
                     />
                 )}
                 {!isLoading && files.length > 0 && (
-                    <ul className="record-list">
-                        {files.map((file) => (
-                            <li key={file.id} className="record-list__row">
-                                <Link to={`/tracks/${file.id}`} className="record-list__item">
-                                    <div className="record-list__meta">
-                                        <strong>{file.name || file.filename}</strong>
-                                        <small>
-                                            {file.activityDate ? formatDateTime(file.activityDate) : file.filename}
-                                            {file.workoutType ? ` · ${file.workoutType === "intervals" ? `Intervals${file.intervals?.some((iv) => iv.kind === "work") ? ` (${file.intervals.filter((iv) => iv.kind === "work").length}×)` : ""}` : file.workoutType}` : ""}
-                                            {file.tags ? ` · ${file.tags}` : ""}
-                                        </small>
+                    <div className="record-list">
+                        {files.map((file) => {
+                            const wt = file.workoutType ?? "";
+                            const isWT = wt === "easy" || wt === "long" || wt === "tempo" || wt === "hills" || wt === "intervals" || wt === "race" || wt === "other";
+                            const wtLabel = !isWT ? ""
+                                : wt === "intervals"
+                                    ? `Intervals${file.intervals?.some((iv) => iv.kind === "work") ? ` (${file.intervals.filter((iv) => iv.kind === "work").length}×)` : ""}`
+                                    : wt === "easy" ? "Easy" : wt === "long" ? "Long" : wt === "tempo" ? "Tempo"
+                                    : wt === "hills" ? "Hills" : wt === "race" ? "Race" : "Other";
+                            const wtTone = wt === "easy" ? "success"
+                                : wt === "tempo" ? "warning"
+                                : wt === "hills" || wt === "intervals" ? "danger"
+                                : "neutral";
+                            const rowClass = isWT ? ` record-list__item--${wt}` : "";
+                            const ds = file.durationSeconds;
+                            const dm = file.distanceMeters;
+                            const pc = ds !== undefined && ds > 0 && dm !== undefined && dm > 0
+                                ? ds / (dm / 1000)
+                                : undefined;
+                            return (
+                            <Link key={file.id} to={`/tracks/${file.id}`} className={`record-list__item${rowClass}`}>
+                                <span className={`record-list__dot record-list__dot--${wtTone}`} aria-hidden="true" />
+                                <div className="record-list__body">
+                                    <div className="record-list__primary">
+                                        <span className="record-list__type">{wtLabel || file.fileType?.toUpperCase() || "Training"}</span>
+                                        <span className="record-list__date">{file.activityDate ? formatDayMonth(file.activityDate) : "—"}</span>
+                                        <span className="record-list__dist">{formatDistance(file.distanceMeters)}</span>
+                                        <span className="record-list__dur">{file.durationSeconds !== undefined && file.durationSeconds > 0 ? formatDuration(file.durationSeconds) : "—"}</span>
                                     </div>
-                                    <div className="record-list__stats">
-                                        {file.distanceMeters !== undefined && file.distanceMeters > 0 && (
-                                            <strong>{formatDistance(file.distanceMeters)}</strong>
-                                        )}
-                                        {file.elevationGain !== undefined && file.elevationGain > 0 && (
-                                            <span>↑ {formatElevation(file.elevationGain)}</span>
-                                        )}
-                                        {file.durationSeconds !== undefined && file.durationSeconds > 0 && (
-                                            <span>{formatDuration(file.durationSeconds)}</span>
-                                        )}
+                                    <div className="record-list__secondary">
+                                        <span className="record-list__name">{file.name || file.filename}</span>
+                                        <span className="record-list__chips">
+                                            {pc !== undefined && <span className="record-list__chip">{formatPace(pc)}</span>}
+                                            {file.elevationGain !== undefined && file.elevationGain > 0 && <span className="record-list__chip">↑{formatElevation(file.elevationGain)}</span>}
+                                            {file.avgHeartRate !== undefined && file.avgHeartRate > 0 && <span className="record-list__chip">♥{file.avgHeartRate.toFixed(0)}</span>}
+                                            {file.tags !== undefined && file.tags !== "" && <span className="record-list__chip record-list__chip--tag">{file.tags}</span>}
+                                        </span>
                                     </div>
-                                </Link>
+                                </div>
                                 <button
                                     type="button"
                                     className="icon-btn icon-btn--danger record-list__delete"
                                     title="Delete training"
                                     aria-label={`Delete ${file.name || file.filename}`}
                                     disabled={deletingId === file.id}
-                                    onClick={() => handleDelete(file)}
+                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(file); }}
                                 >
                                     ✕
                                 </button>
-                            </li>
-                        ))}
-                    </ul>
+                            </Link>
+                            );
+                        })}
+                    </div>
                 )}
             </Card>
         </section>

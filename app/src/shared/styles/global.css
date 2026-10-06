@@ -601,82 +601,137 @@
 /* ---------------------------------------------------------------- */
 
 .record-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
     display: grid;
-    gap: 0.6rem;
+    gap: 0.45rem;
 }
 
-.record-list__row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.record-list__row .record-list__item {
-    flex: 1;
-    min-width: 0;
-}
-
-.record-list__delete {
-    flex-shrink: 0;
-}
-
+/* Each training is a clickable card with a colored accent bar + dot. */
 .record-list__item {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.75rem 0.9rem;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 0.7rem 0.5rem 0.9rem;
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+    border-left: 4px solid var(--border);
+    border-radius: var(--radius-sm);
     background: var(--surface);
     cursor: pointer;
     text-decoration: none;
     color: inherit;
-    transition: border-color 120ms ease, background 120ms ease;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
 .record-list__item:hover {
     border-color: var(--border-strong);
-    background: var(--surface-muted);
+    box-shadow: var(--shadow-sm);
 }
 
-.record-list__item.is-selected {
-    border-color: var(--accent);
-    background: var(--accent-soft);
+/* Workout type accent colors for the left border bar. */
+.record-list__item--easy  { border-left-color: var(--success); }
+.record-list__item--long  { border-left-color: var(--accent); }
+.record-list__item--tempo { border-left-color: var(--warning); }
+.record-list__item--hills { border-left-color: var(--danger); }
+.record-list__item--intervals { border-left-color: var(--danger); }
+.record-list__item--race { border-left-color: var(--accent-strong); }
+
+/* Colored dot swatch — also doubles as the type indicator at a glance. */
+.record-list__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    align-self: center;
+    margin-top: 0.15rem;
 }
 
-.record-list__meta {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
+.record-list__dot--success { background: var(--success); }
+.record-list__dot--warning { background: var(--warning); }
+.record-list__dot--danger  { background: var(--danger); }
+.record-list__dot--neutral { background: var(--muted); }
+
+.record-list__body {
+    flex: 1;
     min-width: 0;
 }
 
-.record-list__meta strong {
+/* Primary row: type · date · distance · duration — space-between. */
+.record-list__primary {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.record-list__type {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--ink-secondary);
+}
+
+.record-list__date {
+    font-size: 0.78rem;
+    color: var(--muted);
+}
+
+.record-list__dist {
     font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    margin-left: auto;
+}
+
+.record-list__dur {
+    font-size: 0.88rem;
+    font-weight: 550;
+    color: var(--ink-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Secondary row: name · chips (pace, elevation, hr, tags). */
+.record-list__secondary {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin: 0.1rem 0 0;
+}
+
+.record-list__name {
+    font-size: 0.82rem;
+    color: var(--ink);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex: 1;
+    min-width: 0;
 }
 
-.record-list__meta small {
-    color: var(--muted);
-    font-size: 0.8rem;
-}
-
-.record-list__stats {
-    display: flex;
-    gap: 1.25rem;
+.record-list__chips {
+    display: inline-flex;
     align-items: center;
-    font-size: 0.88rem;
-    color: var(--ink-secondary);
+    gap: 0.25rem;
+    flex-wrap: nowrap;
+}
+
+.record-list__chip {
+    font-size: 0.72rem;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.record-list__chip--tag {
+    padding: 0.05rem 0.35rem;
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 0.68rem;
+}
+
+.record-list__delete {
     flex-shrink: 0;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    font-variant-numeric: tabular-nums;
+    align-self: center;
 }
 
 /* ---------------------------------------------------------------- */
@@ -1383,6 +1438,52 @@
     stroke-dasharray: 3 2;
 }
 
+/* ------------------------------------------------------------------ */
+/* Mini interval strip — compact visual for the sessions table        */
+/* ------------------------------------------------------------------ */
+
+.iv-mini-strip {
+    display: inline-flex;
+    height: 0.85rem;
+    border-radius: 2px;
+    overflow: hidden;
+    min-width: 40px;
+    width: 100%;
+    gap: 0;
+}
+
+.iv-mini-strip__seg {
+    height: 100%;
+}
+
+.iv-mini-strip__seg--work {
+    background: var(--chart-4);
+}
+
+.iv-mini-strip__seg--recovery {
+    background: var(--chart-1);
+    opacity: 0.35;
+}
+
+.iv-mini-strip__seg--warmup,
+.iv-mini-strip__seg--cooldown {
+    background: var(--muted);
+    opacity: 0.2;
+}
+
+.iv-mini-strip-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    align-items: stretch;
+}
+
+.iv-mini-strip__count {
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-weight: 400;
+}
+
 .session-table {
     margin-top: var(--space-3);
 }
@@ -1411,7 +1512,10 @@
     cursor: pointer;
     text-align: left;
     white-space: normal;
-    min-width: 11rem;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 7rem;
 }
 
 .session-table__select:hover {
@@ -2245,8 +2349,8 @@ button.week-agenda__entry--completed {
     }
 
     .record-list__stats {
-        gap: 0.75rem;
-        font-size: 0.8rem;
+        gap: 0.4rem;
+        font-size: 0.76rem;
     }
 
     .week-agenda {
@@ -2314,74 +2418,99 @@ button.week-agenda__entry--completed {
 
 .plan-list {
     display: grid;
-    gap: 0.85rem;
+    gap: 0.5rem;
 }
 
+/* Compact, visually scannable plan card with a status-colored left accent bar. */
 .plan-card {
     display: flex;
-    gap: 1.25rem;
+    gap: 0.6rem;
     justify-content: space-between;
     align-items: flex-start;
-    flex-wrap: wrap;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
-.plan-card__main {
-    flex: 1 1 340px;
+.plan-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-sm);
+}
+
+.plan-card--draft {
+    border-left-color: var(--muted);
+}
+
+.plan-card--active {
+    border-left-color: var(--success);
+}
+
+.plan-card--archived {
+    border-left-color: var(--warning);
+}
+
+.plan-card__body {
+    flex: 1;
     min-width: 0;
 }
 
-.plan-card__heading {
+.plan-card__head {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.4rem;
     flex-wrap: wrap;
 }
 
 .plan-card__title {
-    font-size: 1.05rem;
-    font-weight: 700;
+    font-size: 0.95rem;
+    font-weight: 650;
     color: var(--ink);
+    text-decoration: none;
 }
 
 .plan-card__title:hover {
     color: var(--accent);
 }
 
-.plan-card__description {
-    margin: 0.35rem 0 0;
-    color: var(--ink-secondary);
-}
-
-.plan-card__reasoning {
-    margin: 0.4rem 0 0;
-    font-size: 0.85rem;
-    color: var(--muted);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
 .plan-card__meta {
-    list-style: none;
     display: flex;
-    gap: 0.9rem;
+    gap: 0.35rem 0.55rem;
     flex-wrap: wrap;
-    margin: 0.6rem 0 0;
-    padding: 0;
-    font-size: 0.8rem;
+    margin: 0.25rem 0 0;
+    font-size: 0.73rem;
     color: var(--muted);
+    line-height: 1.3;
 }
 
-.plan-card__meta strong {
+.plan-card__meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    white-space: nowrap;
+}
+
+.plan-card__meta-item strong {
     color: var(--ink);
+    font-weight: 600;
 }
 
+/* Compact action buttons sized down to match the denser card. */
 .plan-card__actions {
     display: flex;
-    gap: 0.45rem;
-    flex-wrap: wrap;
+    gap: 0.2rem;
+    flex-wrap: nowrap;
     align-items: center;
+    flex-shrink: 0;
+}
+
+.plan-card__actions .btn {
+    height: 1.7rem;
+    padding: 0 0.45rem;
+    font-size: 0.76rem;
+    gap: 0.25rem;
 }
 
 .plan-note-card {
@@ -2503,6 +2632,93 @@ button.week-agenda__entry--completed {
     gap: 0.45rem;
     flex-wrap: wrap;
     align-items: center;
+}
+
+.plan-description {
+    line-height: 1.6;
+    font-size: 0.92rem;
+}
+
+.plan-description h1,
+.plan-description h2,
+.plan-description h3,
+.plan-description h4 {
+    margin: 0.75rem 0 0.35rem;
+    font-weight: 650;
+    line-height: 1.3;
+}
+
+.plan-description h1 { font-size: 1.2rem; }
+.plan-description h2 { font-size: 1.05rem; }
+.plan-description h3 { font-size: 0.95rem; }
+.plan-description h4 { font-size: 0.88rem; }
+
+.plan-description p {
+    margin: 0.35rem 0;
+}
+
+.plan-description ul,
+.plan-description ol {
+    margin: 0.35rem 0;
+    padding-left: 1.2rem;
+}
+
+.plan-description li {
+    margin: 0.15rem 0;
+}
+
+.plan-description code {
+    background: var(--surface-muted);
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    font-size: 0.82rem;
+}
+
+.plan-description pre {
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.8rem;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+
+.plan-description pre code {
+    background: none;
+    padding: 0;
+}
+
+.plan-description blockquote {
+    margin: 0.5rem 0;
+    padding: 0 0 0 0.75rem;
+    border-left: 3px solid var(--border-strong);
+    color: var(--muted);
+}
+
+.plan-description table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    margin: 0.5rem 0;
+}
+
+.plan-description th,
+.plan-description td {
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+}
+
+.plan-description img {
+    max-width: 100%;
+    border-radius: var(--radius-sm);
+}
+
+.plan-description hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0.75rem 0;
 }
 
 .plan-reasoning {

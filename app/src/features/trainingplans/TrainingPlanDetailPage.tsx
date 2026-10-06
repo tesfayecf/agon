@@ -1,6 +1,8 @@
 import { Fragment, useEffect, useState, type ReactElement } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
+import { marked } from "marked";
+
 import {
     deleteTrainingPlan,
     fetchTrainingPlan,
@@ -83,6 +85,37 @@ export const TrainingPlanDetailPage = (): ReactElement => {
     }
     const weekNumbers = [...weeks.keys()].sort((a, b) => a - b);
 
+    // --- Markdown helpers for the plan description (only used when plan is non-null) ---
+    const planDesc = plan !== null ? plan.description ?? "" : "";
+    const hasDescription = planDesc !== "";
+
+    const stripMarkdown = (text: string): string =>
+        text
+            .replace(/[*_~`]/g, "")
+            .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+            .replace(/^#{1,6}\s+/gm, "")
+            .replace(/>\s+/g, "")
+            .trim();
+
+    const descriptionExcerpt =
+        hasDescription
+            ? (() => {
+                  const plain = stripMarkdown(planDesc);
+                  return plain.length > 130
+                      ? plain.slice(0, 130).replace(/\s+\S*$/, "") + "…"
+                      : plain;
+              })()
+            : undefined;
+
+    const renderMarkdown = (text: string): string => {
+        try {
+            const html = marked.parse(text, { async: false });
+            return typeof html === "string" ? html : text;
+        } catch {
+            return text;
+        }
+    };
+
     return (
         <section aria-live="polite">
             {isLoading ? (
@@ -102,7 +135,7 @@ export const TrainingPlanDetailPage = (): ReactElement => {
                     <PageHeader
                         eyebrow="Coaching"
                         title={plan.title}
-                        subtitle={plan.description !== "" ? plan.description : undefined}
+                        subtitle={descriptionExcerpt}
                         actions={
                             <div className="page-header__actions-inline">
                                 <Link className="btn btn-ghost btn-sm" to="/plans">
@@ -131,6 +164,12 @@ export const TrainingPlanDetailPage = (): ReactElement => {
                     />
 
                     {error !== null && <ErrorState message={error} />}
+
+                    {hasDescription && (
+                        <Card title="Description" eyebrow="About this plan">
+                            <div className="plan-description" dangerouslySetInnerHTML={{ __html: renderMarkdown(planDesc) }} />
+                        </Card>
+                    )}
 
                     <div className="kpi-grid">
                         <div className="metric-card">
@@ -161,7 +200,7 @@ export const TrainingPlanDetailPage = (): ReactElement => {
 
                     {plan.reasoning !== "" && plan.reasoning !== undefined && (
                         <Card title="AI reasoning" eyebrow="Why this plan">
-                            <p className="plan-reasoning">{plan.reasoning}</p>
+                            <div className="plan-description" dangerouslySetInnerHTML={{ __html: renderMarkdown(plan.reasoning) }} />
                             {(plan.generationParams.prompt !== "" && plan.generationParams.prompt !== undefined) ||
                             (plan.generationParams.model !== "" && plan.generationParams.model !== undefined) ? (
                                 <p className="plan-reasoning__meta">

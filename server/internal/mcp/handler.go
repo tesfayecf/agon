@@ -444,7 +444,7 @@ func (p *AgonToolProvider) List(ctx context.Context) []MCPTool {
 				"type": "object",
 				"properties": map[string]any{
 					"title": map[string]any{"type": "string", "description": "Title for this training plan"},
-					"description": map[string]any{"type": "string", "description": "Description of the plan's purpose and approach"},
+					"description": map[string]any{"type": "string", "description": "Description of the plan's purpose and approach (supports Markdown)"},
 					"reasoning": map[string]any{"type": "string", "description": "AI reasoning — analysis of past training and rationale for this plan"},
 					"weekCount": map[string]any{"type": "integer", "description": "Number of weeks this plan covers (1-16)", "minimum": 1, "maximum": 16},
 					"startDate": map[string]any{"type": "string", "description": "Start date of the plan (YYYY-MM-DD)"},
@@ -459,7 +459,7 @@ func (p *AgonToolProvider) List(ctx context.Context) []MCPTool {
 								"date": map[string]any{"type": "string", "description": "Date YYYY-MM-DD (optional)"},
 								"trainingType": map[string]any{"type": "string", "description": "e.g. run, bike, swim, rest, strength"},
 								"title": map[string]any{"type": "string", "description": "Short session title"},
-								"description": map[string]any{"type": "string", "description": "Detailed session description"},
+								"description": map[string]any{"type": "string", "description": "Detailed session description (supports Markdown)"},
 								"targetDistanceMeters": map[string]any{"type": "number", "description": "Target distance in meters"},
 								"targetDurationSeconds": map[string]any{"type": "number", "description": "Target duration in seconds"},
 								"targetPaceSecondsPerKm": map[string]any{"type": "number", "description": "Target pace in sec/km"},
