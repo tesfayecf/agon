@@ -81,7 +81,7 @@ export const AppShell = (): ReactElement => {
                     </button>
                 </div>
 
-                <label className="btn btn-primary sidebar__upload file-input-btn">
+                <label className="sidebar__upload file-input-btn">
                     <span className="sidebar__upload-icon" aria-hidden="true">+</span>
                     <span className="sidebar__upload-label">{isUploading ? "Uploading…" : "Upload Training"}</span>
                     <input
