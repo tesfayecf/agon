@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"example.com/app-template/server/internal/profile"
+	"github.com/tesfayecf/agon/server/internal/profile"
 )
 
 func TestProfileRoundTripWithDerivedMetrics(t *testing.T) {

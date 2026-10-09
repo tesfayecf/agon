@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"example.com/app-template/server/internal/config"
+	"github.com/tesfayecf/agon/server/internal/config"
 )
 
 func newTestServer(t *testing.T) *http.Server {

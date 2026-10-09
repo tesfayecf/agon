@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"example.com/app-template/server/internal/profile"
+	"github.com/tesfayecf/agon/server/internal/profile"
 )
 
 func registerProfileRoutes(mux *http.ServeMux, db *sql.DB) {

@@ -1,5 +1,5 @@
 {
-  "name": "app-template-web",
+  "name": "agon-web",
   "description": "Opinionated React frontend starter for Go-backed products.",
   "license": "MIT",
   "type": "commonjs",

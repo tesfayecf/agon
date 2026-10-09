@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"example.com/app-template/server/internal/activities"
-	"example.com/app-template/server/internal/sqlite"
+	"github.com/tesfayecf/agon/server/internal/activities"
+	"github.com/tesfayecf/agon/server/internal/sqlite"
 )
 
 func TestSetActivityWorkoutTool(t *testing.T) {

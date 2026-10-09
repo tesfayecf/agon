@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"example.com/app-template/server/internal/activities"
-	"example.com/app-template/server/internal/planning"
+	"github.com/tesfayecf/agon/server/internal/activities"
+	"github.com/tesfayecf/agon/server/internal/planning"
 )
 
 // GoalWithProgress augments a stored goal with computed progress against completed training.

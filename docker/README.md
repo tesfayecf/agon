@@ -7,7 +7,7 @@ The Docker image packages the Go API and built Vite frontend into one container.
 From the repository root:
 
 ```bash
-docker buildx build --platform linux/amd64 -t app-template:local -f docker/Dockerfile . --load
+docker buildx build --platform linux/amd64 -t agon:local -f docker/Dockerfile . --load
 ```
 
 The command must run from the repository root so `app/`, `server/`, and `docker/` are available in the build context. Set `VITE_API_ORIGIN` with `--build-arg` when the frontend must call an API outside the container. The default empty value keeps requests same-origin through Nginx:
@@ -16,7 +16,7 @@ The command must run from the repository root so `app/`, `server/`, and `docker/
 docker buildx build \
 	--build-arg VITE_API_ORIGIN=https://api.example.com \
 	--platform linux/amd64 \
-	-t app-template:local \
+	-t agon:local \
 	-f docker/Dockerfile . \
 	--load
 ```
@@ -26,7 +26,7 @@ To build for multiple platforms and publish directly to a registry:
 ```bash
 docker buildx build \
 	--platform linux/amd64,linux/arm64 \
-	-t your-registry/app-template:latest \
+	-t your-registry/agon:latest \
 	-f docker/Dockerfile . \
 	--push
 ```
@@ -43,9 +43,9 @@ To run the locally tagged image directly without Compose:
 
 ```bash
 docker run --rm \
-	--name app-template \
+	--name agon \
 	-p 3000:80 \
-	app-template:local
+	agon:local
 ```
 
 Open `http://localhost:3000`. The container serves the built frontend through Nginx and proxies `/api/*` to the Go API running inside the same container.

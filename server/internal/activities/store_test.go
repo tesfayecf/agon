@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"example.com/app-template/server/internal/sqlite"
+	"github.com/tesfayecf/agon/server/internal/sqlite"
 )
 
 func TestFileRecordsStore(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"example.com/app-template/server/internal/activities"
+	"github.com/tesfayecf/agon/server/internal/activities"
 )
 
 func registerAnalyticsRoutes(mux *http.ServeMux, db *sql.DB) {

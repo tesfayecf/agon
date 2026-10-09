@@ -13,7 +13,7 @@ before large feature work.
 
 ## Tech stack
 
-- **Backend**: Go 1.24 (stdlib-first), module `example.com/app-template/server`, entrypoint `server/cmd/api/main.go`. HTTP via `net/http` `ServeMux` with method-pattern routes (`"GET /api/..."`). FIT decoding via `github.com/tormoder/fit`; TCX via `encoding/xml`.
+- **Backend**: Go 1.24 (stdlib-first), module `github.com/tesfayecf/agon/server`, entrypoint `server/cmd/api/main.go`. HTTP via `net/http` `ServeMux` with method-pattern routes (`"GET /api/..."`). FIT decoding via `github.com/tormoder/fit`; TCX via `encoding/xml`.
 - **Frontend**: React 19 + Vite 6 + TypeScript, React Router 7, TanStack Query 5. Managed with pnpm (`pnpm@10.6.1`) under `app/`. Tests via Vitest.
 - **Optional infra**: SQLite (WAL, migrations, backups, corrupt-file quarantine) under `server/internal/sqlite/`, enabled only when `SQLITE_PATH` is set. S3/Garage object storage under `server/internal/storage/` (with local fallback) and `cmd/garage.sh`.
 

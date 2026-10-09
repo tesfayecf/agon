@@ -1,87 +1,117 @@
 # Agon
 
-Agon is a Go-backed React application for uploading and inspecting FIT and TCX activity files. It parses uploaded files on the server and displays activity metadata plus representative GPS, speed, distance, timestamp, and heart-rate records in the browser.
+A self-hosted training log and activity inspector for runners and cyclists.
+Upload `.fit` and `.tcx` files, and Agon parses them on a Go server to serve
+GPS tracks, splits, interval analysis, training-load trends, race predictions,
+goals, a calendar, and AI-assisted training plans over MCP.
 
-## What is included
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
-- Go API under `server/` with explicit config loading, health endpoints, request logging, graceful shutdown, multipart activity uploads, FIT parsing, TCX parsing, and HTTP tests.
-- React + Vite app under `app/` with React Router, React Query, a typed API client, a `/api` dev proxy, and an activity upload/detail interface at `/upload`.
-- FIT decoding through `github.com/tormoder/fit` and TCX decoding through Go's standard XML library.
-- Optional SQLite infrastructure under `server/internal/sqlite/` with WAL mode, migrations, integrity checks, backups, and corrupt-file quarantine. It is enabled only when `SQLITE_PATH` is set.
-- Root VS Code tasks for local development, builds, linting, typechecking, and tests.
-- Shell helpers in `cmd/` for local development and optional SQLite or Garage workflows.
+## Features
+
+**Activity files**
+- Upload one or many `.fit` / `.tcx` files; each file is parsed server-side and reported per-file, so one bad file never hides the others.
+- Activity detail with a canvas-rendered GPS track, time-series charts (speed, heart rate, elevation, cadence), split analysis, and run insights (pace distribution, HR zones).
+- Interval sessions: manually labelled or auto-derived warmup/work/recovery/cooldown segments with per-rep pace and heart rate.
+- Optional SQLite persistence (WAL, migrations, backups, corrupt-file quarantine) enabled via `SQLITE_PATH`.
+
+**Training analytics**
+- Dashboard with overview, endurance, and interval tabs; weekly/monthly trends and personal bests.
+- Training-load card with zone breakdown.
+- Race predictor: VDOT-based race-time predictions, effort-adjusted with heart rate when resting/max HR is set.
+- Athlete profile: height, weight, birth date, sex, resting/max heart rate, with derived age, BMI, max HR, and HR reserve.
+
+**Planning**
+- Goals with progress rings, a month calendar, week agenda, and a year heatmap.
+- Schedule templates and planned sessions.
+- Training plans with draft/active/completed status and a plan composer.
+
+**AI integration (MCP)**
+- A Model Context Protocol server runs inside the API server over Streamable HTTP (`POST /api/mcp`), exposing your training data as resources and tools (`generate_training_plan`, `create_goal`, `create_planned_session`, and more).
+- Works with Claude Desktop, GitHub Copilot, VS Code, Cursor, and any MCP client. A stdio fallback (`cmd/mcp-run.sh`) covers stdio-only clients.
+
+**Interface**
+- Light and dark themes, responsive layout, keyboard-friendly controls.
 
 ## Quick start
 
-1. Install Go 1.23+, Node 22.14+, and pnpm 10.6.1.
-2. Install frontend dependencies with `pnpm --dir app install`.
-3. Start the stack with `./cmd/dev.sh`.
-
-If `go` is not available on `PATH`, point the helper script at a local binary:
+Requires Go 1.24+, Node 22+, and pnpm 10.
 
 ```bash
-GO_BIN=/absolute/path/to/go ./cmd/dev.sh
+pnpm --dir app install
+./cmd/agon.sh              # backend on :8080, frontend on :3000
 ```
 
-You can also run each side independently:
+If `go` is not on `PATH`, point the helper at a local binary:
 
 ```bash
-cd server && go run ./cmd/api
+GO_BIN=/absolute/path/to/go ./cmd/agon.sh
+```
+
+Or run each side independently:
+
+```bash
+(cd server && go run ./cmd/api)
 pnpm --dir app dev
 ```
 
-Open `http://localhost:3000/upload` to use the activity inspector. The frontend proxies `/api` to `http://localhost:8080` during local development.
+Open `http://localhost:3000/upload` and drop in some `.fit` or `.tcx` files. The frontend dev server proxies `/api` to `http://localhost:8080`.
 
-Select one or more `.fit` or `.tcx` files. Each file is uploaded to the Go API, parsed server-side, and returned as structured JSON. Successfully parsed files appear in the list and can be selected to inspect their records. A failed file is reported individually without hiding other upload results.
+To enable SQLite persistence, set `SQLITE_PATH` in `server/.env` (see `server/.env.example`).
 
-To build and run the application as a single container with Nginx serving the frontend and proxying the API, see [docker/README.md](docker/README.md):
+## Docker
+
+A single container serves the built frontend with Nginx and proxies `/api/*` to the Go API:
 
 ```bash
 docker compose -f docker/docker-compose.yml up --build
 ```
 
+See [docker/README.md](docker/README.md) for multi-arch builds and API-origin configuration.
+
 ## Structure
 
 ```text
 app/
-	src/
-		app/         # bootstrap, router, shared app shell
-		features/
-			activity/  # FIT/TCX upload UI and API service
-			health/    # API health status view
-		shared/      # truly cross-cutting code only
+  src/
+    app/         # bootstrap, router, shared app shell
+    features/    # activity, dashboard, goals, calendar, schedule, trainingplans, settings, health
+    shared/      # components, api transport, styles, theme
 server/
-	cmd/api/       # application entrypoint
-	internal/
-		activities/  # FIT and TCX parsing and normalized activity records
-		config/      # environment and runtime configuration
-		httpapi/     # routes, middleware, and HTTP tests
-		sqlite/      # optional SQLite infrastructure
-cmd/
-	dev.sh         # run backend + frontend together
-	sqlite.sh      # lightweight sqlite3 wrapper
-	garage.sh      # optional Garage passthrough helper
+  cmd/api/       # application entrypoint
+  cmd/mcp/       # MCP stdio fallback entrypoint
+  internal/
+    activities/  # FIT/TCX parsing, normalized records, analytics, race predictor
+    httpapi/     # routes, middleware, HTTP tests
+    mcp/         # Model Context Protocol server (resources + tools)
+    planning/    # schedule templates and planned sessions
+    profile/     # athlete profile store
+    trainingplan/# AI-generated training plan store
+    sqlite/      # optional SQLite infrastructure
+    storage/     # S3/Garage object storage with local fallback
+cmd/             # agon.sh (dev), sqlite.sh, garage.sh, mcp-run.sh
+docs/            # PRDs and roadmap
 ```
 
-## API
+## API surface
 
-- `GET /api/health/live` returns the liveness status.
-- `GET /api/health/ready` returns the readiness status.
-- `POST /api/activities/upload` accepts one or more multipart files under the `files` field. Supported extensions are `.fit` and `.tcx`.
+- `GET /api/health/live`, `GET /api/health/ready` — liveness and readiness.
+- `POST /api/activities/upload` — multipart upload under the `files` field; one result per file.
+- `GET /api/activities`, `GET /api/activities/{id}`, `PUT /api/activities/{id}`, `DELETE /api/activities/{id}`.
+- `PUT /api/activities/{id}/workout` — set the workout type and, for intervals, a manual interval list.
+- `GET /api/dashboard` — aggregated analytics (endurance, intervals, race predictor, training load).
+- `GET/PUT /api/profile` — athlete physical metrics.
+- `GET/POST/DELETE /api/training-plans`, `PUT /api/training-plans/{id}/status`.
+- Planning routes in `server/internal/httpapi/planning_routes.go`; analytics routes in `analytics_routes.go`.
+- `POST /api/mcp` — MCP Streamable HTTP endpoint (also SSE for discovery).
 
-The upload response contains one result per submitted file. Successful results include normalized activity metadata and records. Unsupported, malformed, or otherwise unparseable files return an error result and cause the request to use HTTP `400` while preserving the other per-file results.
+Uploads are strict by design: unsupported or malformed files return an error result with HTTP `400` while preserving every other per-file result.
 
-## Conventions
+## Development
 
-- Put product behavior in `app/src/features` first. Promote code to `shared` only when multiple features truly need it.
-- Keep API transport in `shared/api` and endpoint services beside their owning feature.
-- Keep the backend stdlib-first until concrete pressure justifies adding a framework.
-- Use `/api/health/live` and `/api/health/ready` for backend health checks.
-- Use the root VS Code tasks `workspace:dev` and `workspace:check` when working from the repo root.
+Backend stays stdlib-first (`net/http` + `http.ServeMux`, FIT via `github.com/tormoder/fit`, TCX via `encoding/xml`). Frontend is React 19 + Vite 6 + TypeScript with React Router 7, TanStack Query 5, and Vitest.
 
-## Validation
-
-Run the full project checks with:
+Run the full project checks:
 
 ```bash
 pnpm --dir app lint
@@ -90,11 +120,19 @@ pnpm --dir app build
 (cd server && go test ./...)
 ```
 
-The server tests cover health endpoints, CORS behavior, malformed JSON, successful TCX upload parsing, unsupported file types, and malformed FIT files.
+Server tests cover health, CORS, malformed JSON, TCX/FIT parsing, unsupported types, workouts, profile, planning, and the MCP layer.
 
 ## Optional local services
 
-- `./cmd/sqlite.sh` opens a local SQLite database at `server/.tmp/app.db` by default.
-- `./cmd/garage.sh` forwards arguments to a local Garage binary when you need object storage during development.
+- `./cmd/sqlite.sh` — sqlite3 wrapper for `server/.tmp/app.db`.
+- `./cmd/garage.sh` — passthrough to a local Garage (S3) server for object-storage development. `config/garage.toml` contains local-only defaults; rotate all tokens before using Garage anywhere else.
 
-To enable the optional application SQLite package, set `SQLITE_PATH` in `server/.env`. The current activity upload flow processes files in memory and does not persist uploaded activities to SQLite.
+## Documentation
+
+- `docs/PRDs/` — product requirement documents.
+- `docs/ROADMAP.md` — prioritised feature roadmap.
+- `AGENTS.md` — conventions for AI coding agents working in this repo.
+
+## License
+
+[MIT](LICENSE)

@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	"example.com/app-template/server/internal/config"
-	"example.com/app-template/server/internal/httpapi"
+	"github.com/tesfayecf/agon/server/internal/config"
+	"github.com/tesfayecf/agon/server/internal/httpapi"
 )
 
 func main() {

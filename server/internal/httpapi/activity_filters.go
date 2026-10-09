@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"example.com/app-template/server/internal/activities"
+	"github.com/tesfayecf/agon/server/internal/activities"
 )
 
 // filterActivityRecords applies the Trainings search/filter query parameters:

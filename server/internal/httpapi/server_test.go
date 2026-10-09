@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"example.com/app-template/server/internal/config"
+	"github.com/tesfayecf/agon/server/internal/config"
 )
 
 func TestNewServerHealthEndpoints(t *testing.T) {

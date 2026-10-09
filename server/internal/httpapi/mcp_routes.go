@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"example.com/app-template/server/internal/mcp"
-	"example.com/app-template/server/internal/storage"
+	"github.com/tesfayecf/agon/server/internal/mcp"
+	"github.com/tesfayecf/agon/server/internal/storage"
 )
 
 // registerMCPRoutes wires the Model Context Protocol server onto the HTTP API.

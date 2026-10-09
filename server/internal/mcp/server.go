@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"example.com/app-template/server/internal/storage"
+	"github.com/tesfayecf/agon/server/internal/storage"
 )
 
 // MCPServer is a JSON-RPC 2.0 dispatcher that routes MCP method calls to the

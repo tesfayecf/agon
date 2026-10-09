@@ -1,4 +1,4 @@
-module example.com/app-template/server
+module github.com/tesfayecf/agon/server
 
 go 1.24
 

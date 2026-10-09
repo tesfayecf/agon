@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"example.com/app-template/server/internal/trainingplan"
+	"github.com/tesfayecf/agon/server/internal/trainingplan"
 )
 
 func registerTrainingPlanRoutes(mux *http.ServeMux, db *sql.DB) {

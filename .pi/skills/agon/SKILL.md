@@ -9,7 +9,7 @@ Agon is a Go-backed React app for uploading and inspecting FIT/TCX activity file
 
 ## Architecture
 
-- Backend: Go 1.24, stdlib-first, module `example.com/app-template/server`, entry `server/cmd/api`.
+- Backend: Go 1.24, stdlib-first, module `github.com/tesfayecf/agon/server`, entry `server/cmd/api`.
 - Frontend: React 19 + Vite 6 + TypeScript + TanStack Query + React Router, pnpm, under `app/`.
 - Frontend proxies `/api` to `http://localhost:8080` in dev.
 

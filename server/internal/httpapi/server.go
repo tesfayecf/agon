@@ -11,13 +11,13 @@ import (
 	"strings"
 	"time"
 
-	"example.com/app-template/server/internal/activities"
-	"example.com/app-template/server/internal/config"
-	"example.com/app-template/server/internal/planning"
-	"example.com/app-template/server/internal/profile"
-	"example.com/app-template/server/internal/sqlite"
-	"example.com/app-template/server/internal/storage"
-	"example.com/app-template/server/internal/trainingplan"
+	"github.com/tesfayecf/agon/server/internal/activities"
+	"github.com/tesfayecf/agon/server/internal/config"
+	"github.com/tesfayecf/agon/server/internal/planning"
+	"github.com/tesfayecf/agon/server/internal/profile"
+	"github.com/tesfayecf/agon/server/internal/sqlite"
+	"github.com/tesfayecf/agon/server/internal/storage"
+	"github.com/tesfayecf/agon/server/internal/trainingplan"
 )
 
 // NewServer composes the API routes and HTTP middleware used by the application.

@@ -6,7 +6,7 @@ GPS, speed, distance, timestamp, and heart-rate records are displayed in the bro
 
 ## Tech stack
 
-- Backend: Go 1.24 (stdlib-first), module `example.com/app-template/server`, entrypoint `server/cmd/api`.
+- Backend: Go 1.24 (stdlib-first), module `github.com/tesfayecf/agon/server`, entrypoint `server/cmd/api`.
   FIT decoding via `github.com/tormoder/fit`; TCX via `encoding/xml`.
 - Frontend: React 19 + Vite 6 + TypeScript, React Router 7, TanStack Query 5. Managed with pnpm (`pnpm@10.6.1`) under `app/`. Tests via Vitest.
 - Optional infra: SQLite (WAL, migrations, quarantine) under `server/internal/sqlite/`, enabled only when `SQLITE_PATH` is set; S3/Garage object storage helpers under `config/` and `cmd/garage.sh`.

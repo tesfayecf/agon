@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"example.com/app-template/server/internal/activities"
-	"example.com/app-template/server/internal/planning"
-	"example.com/app-template/server/internal/storage"
-	"example.com/app-template/server/internal/trainingplan"
+	"github.com/tesfayecf/agon/server/internal/activities"
+	"github.com/tesfayecf/agon/server/internal/planning"
+	"github.com/tesfayecf/agon/server/internal/storage"
+	"github.com/tesfayecf/agon/server/internal/trainingplan"
 )
 
 // ResourceProvider resolves MCP resource URIs and returns contents.

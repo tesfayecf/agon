@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"testing"
 
-	"example.com/app-template/server/internal/activities"
+	"github.com/tesfayecf/agon/server/internal/activities"
 )
 
 func sampleRecords() []activities.FileRecord {

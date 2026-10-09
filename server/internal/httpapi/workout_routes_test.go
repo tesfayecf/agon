@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"example.com/app-template/server/internal/activities"
+	"github.com/tesfayecf/agon/server/internal/activities"
 )
 
 // intervalTCX builds a TCX with one trackpoint per second: 5 min warm-up,
