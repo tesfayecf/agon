@@ -3,5 +3,6 @@
     // GO
     // ----------------------------------------------------------------------
     "go.goroot": "${workspaceFolder}/third-party/go",
+    "go.toolsGopath": "${workspaceFolder}/go",
     "go.gopath": "${workspaceFolder}/.go",
 }
