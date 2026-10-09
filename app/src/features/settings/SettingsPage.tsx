@@ -19,7 +19,7 @@ export const SettingsPage = (): ReactElement => {
             <PhysicalMetricsCard />
 
             <Card title="Preferences">
-                <p style={{ color: "var(--muted)", margin: 0 }}>
+                <p className="settings-empty-note">
                     Unit and general preferences will be configurable here in a future iteration.
                 </p>
             </Card>

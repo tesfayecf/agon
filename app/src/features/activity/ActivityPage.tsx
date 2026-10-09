@@ -92,7 +92,7 @@ export const ActivityPage = (): ReactElement => {
 
             {error !== null && <ErrorState message={error} />}
 
-            <div className="card-grid" style={{ gridTemplateColumns: "minmax(240px, 1fr) minmax(0, 2.2fr)" }}>
+            <div className="card-grid activity-page-grid">
                 <Card title="Files">
                     {isLoading && <LoadingState label="Loading files…" />}
                     {!isLoading && files.length === 0 && <EmptyState title="No files uploaded yet" />}
@@ -102,9 +102,8 @@ export const ActivityPage = (): ReactElement => {
                                 <li key={file.id}>
                                     <button
                                         type="button"
-                                        className={`record-list__item ${selectedFile?.id === file.id ? "is-selected" : ""}`}
+                                        className={`record-list__item record-list__item--select ${selectedFile?.id === file.id ? "is-selected" : ""}`}
                                         onClick={() => setSelectedId(file.id)}
-                                        style={{ width: "100%", border: "1px solid var(--border)" }}
                                     >
                                         <span className="record-list__meta">
                                             <strong>{file.filename}</strong>
@@ -144,12 +143,12 @@ export const ActivityPage = (): ReactElement => {
                             )}
 
                             {(!selectedFile.records || selectedFile.records.length === 0) && (
-                                <p style={{ marginTop: "1rem", color: "var(--muted)" }}>This file parsed but did not contain activity records.</p>
+                                <p className="activity-meta-note">This file parsed but did not contain activity records.</p>
                             )}
 
                             {selectedFile.records && selectedFile.records.length > 0 && (
-                                <div style={{ overflowX: "auto", marginTop: "1rem" }}>
-                                    <h3>Sample Records</h3>
+                                <div className="sample-records">
+                                    <h3 className="sample-records__heading">Sample Records</h3>
                                     <table className="record-table">
                                         <thead>
                                             <tr>
