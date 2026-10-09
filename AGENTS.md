@@ -41,7 +41,7 @@ docs/
   PRDs/        product requirement docs (timestamped filenames)
   screenshots/ per-iteration UI screenshots
 config/
-  garage.toml  local Garage config
+  garage.toml  local Garage config (gitignored — not committed)
 ```
 
 ## API surface

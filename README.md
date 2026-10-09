@@ -125,7 +125,7 @@ Server tests cover health, CORS, malformed JSON, TCX/FIT parsing, unsupported ty
 ## Optional local services
 
 - `./cmd/sqlite.sh` — sqlite3 wrapper for `server/.tmp/app.db`.
-- `./cmd/garage.sh` — passthrough to a local Garage (S3) server for object-storage development. `config/garage.toml` contains local-only defaults; rotate all tokens before using Garage anywhere else.
+- `./cmd/garage.sh` — passthrough to a local Garage (S3) server for object-storage development. Create your own `config/garage.toml` (gitignored) following [Garage's quickstart](https://garagehq.deuxfleurs.fr/documentation/quickstart/) — never commit real tokens.
 
 ## Documentation
 
